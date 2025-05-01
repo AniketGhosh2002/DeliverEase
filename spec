@@ -15,3 +15,9 @@ Impacted Site (and/or Supplier) is deactivated in TRU	A manufacturing site, mark
 		"Name": "SupplierTest04"
 	}
 }
+
+
+{
+    "data": "001WF00000MFLlqYAH",
+    "success": true
+}
