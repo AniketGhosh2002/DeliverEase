@@ -21,3 +21,14 @@ Impacted Site (and/or Supplier) is deactivated in TRU	A manufacturing site, mark
     "data": "001WF00000MFLlqYAH",
     "success": true
 }
+
+System Error: #5000002: Compile error:
+/usr/tmp/1069820/TruSpecRightTransactionTrigger_mxJPOe8661e0b0100000146.java:139: error: cannot find symbol
+                                                        String patchResponse = patchCall.patchSupplierData(context, patchArgs);
+                                                                                        ^
+  symbol:   method patchSupplierData(matrix.db.Context,java.lang.String[])
+  location: variable patchCall of type TRUSpecRightDataLoader_mxJPO3e650e6c0100000249
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /usr/tmp/1069820/TruSpecRightTransactionTrigger_mxJPOe8661e0b0100000146.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
