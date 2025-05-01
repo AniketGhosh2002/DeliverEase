@@ -32,3 +32,10 @@ Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 Note: /usr/tmp/1069820/TruSpecRightTransactionTrigger_mxJPOe8661e0b0100000146.java uses unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
+
+
+
+JSONObject json = new JSONObject();
+		json.put("content", jsonContent);
+		System.out.println(json.toString());
+		byte[] out = json.toString().trim().getBytes(StandardCharsets.UTF_8);
