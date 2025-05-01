@@ -6,3 +6,12 @@ Impacted Site and/or Supplier is activated in TRU	A manufacturing site, marketin
 3. Supplier/SIte deactivated in TRU"
 Impacted Site (and/or Supplier) is deactivated in TRU	A manufacturing site, marketing company, business unit or a supplier/distributor is deactivated in TRU	"- TRU sends back feed to SpecRight.
 - TRU marks supplier as Inactive in SpecRight."	TRU sends site/supplier status (Inactive) & "Success"/"Published" flag back to SpecRight.				
+
+
+
+
+{
+	"content": {
+		"Name": "SupplierTest04"
+	}
+}
