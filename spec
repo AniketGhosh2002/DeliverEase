@@ -39,3 +39,73 @@ JSONObject json = new JSONObject();
 		json.put("content", jsonContent);
 		System.out.println(json.toString());
 		byte[] out = json.toString().trim().getBytes(StandardCharsets.UTF_8);
+
+
+public String patchSupplierData(Context context, String[] args) throws Exception {
+    URL url;
+    String inputLine = null;
+
+    String supplierId = args[0];     
+    String newName = args[1];        
+
+    int responseCode = 0;
+    int retryCount = 0;
+
+    while ((responseCode != 200 && responseCode != 204 && responseCode != 201) && retryCount <= 3) {
+        try {
+            URIBuilder uri = new URIBuilder("https://test.specright.com/v1/suppliers/" + supplierId);
+            System.out.println("PATCH to: " + uri.toString());
+            url = uri.build().toURL();
+
+            HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+            con.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+            con.setRequestMethod("POST"); 
+            con.setDoOutput(true);
+
+            // Get access token
+            String accessToken = generateToken(context, args);  // Replace with your logic
+            String auth = "Bearer " + accessToken;
+
+            // Set headers
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("x-user-id", "api@specright.com.kenvuedev");
+            con.setRequestProperty("x-api-key", "he6rFkRDeEvrwAg9Dl70d3Fox0aNfmB82EwHQdzI");
+            con.setRequestProperty("Authorization", auth);
+
+            // Build raw JSON body
+            JSONObject content = new JSONObject();
+            content.put("Name", newName);
+
+            JSONObject payload = new JSONObject();
+            payload.put("content", content);
+
+            // Send request
+            try (OutputStream outStream = con.getOutputStream()) {
+                byte[] input = payload.toString().getBytes("utf-8");
+                outStream.write(input, 0, input.length);
+            }
+
+            // Read response
+            responseCode = con.getResponseCode();
+            if (responseCode == 200 || responseCode == 201 || responseCode == 204) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                while ((inputLine = in.readLine()) != null) {
+                    // Capture the last response line
+                }
+                in.close();
+                System.out.println("PATCH Success. Last line: " + inputLine);
+            } else {
+                inputLine = "HTTP Error Code: " + responseCode;
+                System.out.println("PATCH failed. Code: " + responseCode);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            inputLine = "Exception: " + e.getMessage();
+        }
+
+        retryCount++;
+    }
+
+    return inputLine;
+	}
