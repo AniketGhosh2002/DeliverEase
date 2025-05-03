@@ -17,8 +17,23 @@
 						} else {
 							// Patch Supplier to SpecRight
 							System.out.println("Trigger: Patching supplier in SpecRight");
+							
+							JSONObject content = new JSONObject();
+ 
+							for (Map.Entry<String, String> entry : hmJsonFieldMap.entrySet()) {
+								String key = entry.getKey();
+								if (!"Id".equalsIgnoreCase(key) && !"RecordType".equalsIgnoreCase(key)) {
+									content.put(key, entry.getValue());
+								}
+							}
+ 
+							JSONObject inputJson = new JSONObject();
+							inputJson.put("SupplierId", supplierId);
+							inputJson.put("content", content);
+ 
+							System.out.println( inputJson.toString());
 
-							String[] patchArgs = new String[]{ supplierId, supplierName };
+							String[] patchArgs = new String[]{ inputJson.toString() };
 							TRUSpecRightDataLoader_mxJPO patchCall = new TRUSpecRightDataLoader_mxJPO();
 							String patchResponse = patchCall.patchSupplierData(context, patchArgs);
 
