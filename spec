@@ -1,39 +1,36 @@
-#!/bin/bash
-###############################################################################
-#     Script to Create or Active Supplier/Site in the SpecRight               #
-#     Data:    May 2025                                                       #
-#     Author : TCS                                                            #
-#     Notes:                                                                  #
-###############################################################################
+TRUSpecRightDataLoader.sh: line 8: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 9: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 13: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 17: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 20: $'\r': command not found
+-------------------------------- CRON RUN DETAILS ---------------------------------
+ un Started At   : Tue May 20 07:11:00 EDT 2025
+ ase Folder At   : .
+TRUSpecRightDataLoader.sh: line 25: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 33: $'\r': command not found
+mql
+creator
+Tru@2018x
+TRUSpecRightDataLoader.sh: line 37: $'\r': command not found
 
+Matrix Query Language Interface, Version 3DEXPERIENCE R2021x HotFix 8 (64 bits)
 
-###############################################################################
-#    Step 1 : Run the JPO 
-###############################################################################
-
-VDATE=`date +%Y-\%m-\%d_\%H.\%M`
-cronStartDate=`date`
-FileDynamics=`date +%Y\%m\%d`
-
-# get the directory the script file resides
-BASEDIR=$(dirname "$0")
-
-# write the script start date time stamp 
-echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
-echo "Run Started At   : $cronStartDate "
-echo "Base Folder At   : $BASEDIR "
-
-#------------------------------------------------------------------------------
-#    Step 1A : Read the config file entries for MQL connection
-#------------------------------------------------------------------------------
-export BootStrap=`grep BootStrap /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
-export mqlUser=`grep mqlUser /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
-export mqlPwd=`grep mqlPwd /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
-export START_DATE=`grep START_DATE /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
-
-echo "$BootStrap"
-echo "$mqlUser"
-echo "$mqlPwd"
-
-mql -c "verb on; set context user creator pass Tru@2018x; temp query bus \"Business Unit\" * * where \"originated > '$START_DATE' && current=='Active'\" select id dump |;"
-
+Copyright (c) 1993-2020 Dassault Systemes.
+All rights reserved.
+Context successfully set
+Business Unit|NewUnitChange|0000014469|59712.34061.34446.43962
+Business Unit|SuUnit|0000014466|59712.34061.54956.65515
+Business Unit|Supplier1234|0000014467|59712.34061.54957.214
+TRUSpecRightDataLoader.sh: line 39: $'\r': command not found
+Fetching IDs of Business Units...
+TRUSpecRightDataLoader.sh: line 44: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 47: $'\r': command not found
+TRUSpecRightDataLoader.sh: line 50: $'\r': command not found
+Found IDs:
+59712.34061.34446.43962
+59712.34061.54956.65515
+59712.34061.54957.214
+TRUSpecRightDataLoader.sh: line 53: $'\r': command not found
+Starting JPO Execution for each ID...
+TRUSpecRightDataLoader.sh: line 58: syntax error near unexpected token `$'do\r''
+'RUSpecRightDataLoader.sh: line 58: `for id in $ids; do
