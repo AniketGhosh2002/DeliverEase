@@ -1,36 +1,59 @@
-TRUSpecRightDataLoader.sh: line 8: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 9: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 13: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 17: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 20: $'\r': command not found
--------------------------------- CRON RUN DETAILS ---------------------------------
- un Started At   : Tue May 20 07:11:00 EDT 2025
- ase Folder At   : .
-TRUSpecRightDataLoader.sh: line 25: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 33: $'\r': command not found
-mql
-creator
-Tru@2018x
-TRUSpecRightDataLoader.sh: line 37: $'\r': command not found
+#!/bin/bash
+###############################################################################
+#     Script to Create or Active Supplier/Site in the SpecRight               #
+#     Data:    May 2025                                                       #
+#     Author : TCS                                                            #
+#     Notes:                                                                  #
+###############################################################################
 
-Matrix Query Language Interface, Version 3DEXPERIENCE R2021x HotFix 8 (64 bits)
+VDATE=`date +%Y-\%m-\%d_\%H.\%M`
+cronStartDate=`date`
+FileDynamics=`date +%Y\%m\%d`
 
-Copyright (c) 1993-2020 Dassault Systemes.
-All rights reserved.
-Context successfully set
-Business Unit|NewUnitChange|0000014469|59712.34061.34446.43962
-Business Unit|SuUnit|0000014466|59712.34061.54956.65515
-Business Unit|Supplier1234|0000014467|59712.34061.54957.214
-TRUSpecRightDataLoader.sh: line 39: $'\r': command not found
-Fetching IDs of Business Units...
-TRUSpecRightDataLoader.sh: line 44: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 47: $'\r': command not found
-TRUSpecRightDataLoader.sh: line 50: $'\r': command not found
-Found IDs:
-59712.34061.34446.43962
-59712.34061.54956.65515
-59712.34061.54957.214
-TRUSpecRightDataLoader.sh: line 53: $'\r': command not found
-Starting JPO Execution for each ID...
-TRUSpecRightDataLoader.sh: line 58: syntax error near unexpected token `$'do\r''
-'RUSpecRightDataLoader.sh: line 58: `for id in $ids; do
+BASEDIR=$(dirname "$0")
+
+echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
+echo "Run Started At   : $cronStartDate "
+echo "Base Folder At   : $BASEDIR "
+
+#------------------------------------------------------------------------------
+#    Step 1 : Read the config file entries for MQL connection
+#------------------------------------------------------------------------------
+export BootStrap=`grep BootStrap /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
+export mqlUser=`grep mqlUser /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
+export mqlPwd=`grep mqlPwd /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
+export START_DATE=`grep START_DATE /apps/Aniket/Shell/Script/TRUDataLoader.config | cut -d "=" -f2`
+
+echo "$BootStrap"
+echo "$mqlUser"
+echo "$mqlPwd"
+
+mql -c "verb on; set context user creator pass Tru@2018x; temp query bus \"Business Unit\" * * where \"originated > '$START_DATE' && current=='Active'\" select id dump |;"
+
+#------------------------------------------------------------------------------
+#    Step 2: Capture the IDs of Business Units created after START_DATE
+#------------------------------------------------------------------------------
+echo "Fetching IDs of Business Units..."
+
+id_output=$(mql -c "set context user creator pass Tru@2018x; temp query bus \"Business Unit\" * * where \"originated > '$START_DATE' && current=='Active'\" select id dump |;")
+
+ids=$(echo "$id_output" | awk -F"|" '{print $4}' | grep -v "^$")
+
+echo "Found IDs:"
+echo "$ids"
+
+#------------------------------------------------------------------------------
+# Step 3: Loop through each ID and call the JPO method
+#------------------------------------------------------------------------------
+echo "Starting JPO Execution for each ID..."
+for id in $ids; do
+    echo "Processing ID: $id"
+    
+    mql -c "set context user creator pass Tru@2018x; exec prog TRUSpecRightDataLoader -method createOrActiveSupplierData \"$id\";"
+    
+    if [ $? -ne 0 ]; then
+        echo "Error executing JPO for ID: $id"
+    else
+        echo "Successfully processed ID: $id"
+    fi
+done
