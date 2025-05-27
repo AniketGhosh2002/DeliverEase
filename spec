@@ -1,3 +1,5 @@
-doObj.addBusinessInterface(context, INTERFACE_TRUSPECRIGHTINTERFACE);
-					System.out.println("add to interface"+specrightId);
-					doObj.setAttributeValue(context, ATTRIBUTE_SPECRIGHT_SPEC_ID , specrightId);
+DomainObject doObj = new DomainObject(sTRUObjId);
+			StringList selectList = new StringList(1);
+
+selectList.add("attribute[" + ATTRIBUTE_REGION + "]");
+			String strRegion = (String) hashObjmap.get("attribute[" + ATTRIBUTE_REGION + "]");
