@@ -1,34 +1,51 @@
-% Skipped by Timeframe = 
-VAR Bucket = SELECTEDVALUE(SkipTimeFrame[Bucket])
-VAR Total = 
-    CALCULATE(
-        COUNTROWS(Spotify),
-        Spotify[ms_played] < 30000
-    )
-VAR SkippedCount =
-    SWITCH(
-        TRUE(),
-        Bucket = "< 5 sec",
-            CALCULATE(
-                COUNTROWS(Spotify),
-                Spotify[skipped] = TRUE(),
-                Spotify[ms_played] < 5000
-            ),
-        Bucket = "5 – 15 sec",
-            CALCULATE(
-                COUNTROWS(Spotify),
-                Spotify[skipped] = TRUE(),
-                Spotify[ms_played] >= 5000,
-                Spotify[ms_played] < 15000
-            ),
-        Bucket = "15 – 30 sec",
-            CALCULATE(
-                COUNTROWS(Spotify),
-                Spotify[skipped] = TRUE(),
-                Spotify[ms_played] >= 15000,
-                Spotify[ms_played] < 30000
-            ),
-        BLANK()
-    )
-RETURN 
-DIVIDE(SkippedCount, Total, 0)
+#!/bin/bash
+###############################################################################
+#     Script to Create or Activate Supplier/Site in SpecRight                 #
+#     Date:    May 2025                                                       #
+#     Author : TCS                                                            #
+###############################################################################
+ 
+VDATE=$(date +%Y-%m-%d_%H.%M)
+cronStartDate=$(date)
+FileDynamics=$(date +%m%d%Y)
+ 
+echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
+echo "Run Started At   : $cronStartDate"
+ 
+#------------------------------------------------------------------------------
+# Step 1: Setup
+#------------------------------------------------------------------------------
+BASEDIR=$(dirname "$0")
+CONFIG_FILE="$BASEDIR/../Config/inputFileList.txt"
+INPUT_FOLDER="$BASEDIR/../Config/input"
+MQLPWD=$(mql -t -c "execute program PwdMgr -method getPwd 'creator';")
+ 
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "[ERROR] Input config file not found: $CONFIG_FILE"
+  exit 1
+fi
+ 
+#------------------------------------------------------------------------------
+# Step 2: Read all file names into array
+#------------------------------------------------------------------------------
+mapfile -t fileNames < "$CONFIG_FILE"
+ 
+#------------------------------------------------------------------------------
+# Step 3: Loop through each file name and call JPO
+#------------------------------------------------------------------------------
+for fileName in "${fileNames[@]}"; do
+  fileName=$(echo "$fileName" | xargs)  
+  inputFilePath="$INPUT_FOLDER/$fileName"
+ 
+  if [[ -n "$fileName" && -f "$inputFilePath" ]]; then
+    echo "Processing file: $inputFilePath"
+    mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveBulkSupplierData \"$inputFilePath\";"
+  else
+    echo "[WARNING] File not found or empty entry: $inputFilePath"
+  fi
+done
+ 
+#------------------------------------------------------------------------------
+# Step 4: Update CronRun Time
+#------------------------------------------------------------------------------
+date +%m"/"%d"/"%Y" "%r > $BASEDIR/../Config/CronRunBulk.GO
