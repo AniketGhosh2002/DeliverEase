@@ -1,25 +1,34 @@
+#!/bin/bash
+###############################################################################
+#     Script to Create or Activate Supplier/Site in SpecRight                 #
+#     Date:    May 2025                                                       #
+#     Author : TCS                                                            #
+###############################################################################
+
+VDATE=`date +%Y-\%m-\%d_\%H.\%M`
+cronStartDate=`date`
+FileDynamics=`date +%m\%d\%Y`
+
+echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
+echo "Run Started At   : $cronStartDate"
+
+
 #------------------------------------------------------------------------------
-# Step 3: Loop through each file name and call JPO
+# Step 1: Read the CronRun file entry
 #------------------------------------------------------------------------------
-LOG_DIR="$BASEDIR/../Logs"
-mkdir -p "$LOG_DIR"
+BASEDIR=$(dirname "$0")
+export MQLPWD=`mql -t -c "execute program PwdMgr -method getPwd 'creator';"`
+STARTDATE=`cat $BASEDIR/../Config/CronRun.GO`
+echo "$STARTDATE"
 
-for fileName in "${fileNames[@]}"; do
-  fileName=$(echo "$fileName" | xargs)  
-  inputFilePath="$INPUT_FOLDER/$fileName"
+#------------------------------------------------------------------------------
+# Step 2: Call the JPO method
+#------------------------------------------------------------------------------
 
-  if [[ -n "$fileName" && -f "$inputFilePath" ]]; then
-    echo "Processing file: $inputFilePath"
-    
-    logFileName="${fileName%.*}_Log_$VDATE.log"
-    logFilePath="$LOG_DIR/$logFileName"
+mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveSupplierData \"$STARTDATE\";"
 
-    echo "------ LOG START FOR $fileName at $(date) ------" >> "$logFilePath"
-    
-    mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveBulkSupplierData \"$inputFilePath\";" >> "$logFilePath" 2>&1
+#------------------------------------------------------------------------------
+# Step 3: Update the CronRun with execution time
+#------------------------------------------------------------------------------
 
-    echo "------ LOG END FOR $fileName at $(date) --------" >> "$logFilePath"
-  else
-    echo "[WARNING] File not found or empty entry: $inputFilePath"
-  fi
-done
+date +%m"/"%d"/"%Y" "%r >  $BASEDIR/../Config/CronRun.GO
