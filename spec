@@ -5,47 +5,60 @@
 #     Author : TCS                                                            #
 ###############################################################################
  
-# Setup date/time variables
 VDATE=$(date +%Y-%m-%d_%H.%M)
 cronStartDate=$(date)
 FileDynamics=$(date +%m%d%Y)
  
-# Setup base and log directory
-BASEDIR=$(dirname "$0")
-LOGDIR="$BASEDIR/../Logs"
-mkdir -p "$LOGDIR"
-LOGFILE="$LOGDIR/CreateOrActivateSupplier_$VDATE.log"
- 
-# Start logging
-{
 echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
 echo "Run Started At   : $cronStartDate"
  
 #------------------------------------------------------------------------------
-# Step 1: Read the CronRun file entry
+# Step 1: Setup
 #------------------------------------------------------------------------------
-echo ""
-echo "Step 1: Reading CronRun file..."
-export MQLPWD=$(mql -t -c "execute program PwdMgr -method getPwd 'creator';")
-STARTDATE=$(cat "$BASEDIR/../Config/CronRun.GO")
-echo "Start Date for Processing: $STARTDATE"
+BASEDIR=$(dirname "$0")
+LOG_DIR="$BASEDIR/../Log"
+echo "$LOG_DIR"
+CONFIG_FILE="$BASEDIR/../Config/inputFileList.txt"
+INPUT_FOLDER="$BASEDIR/../Config/input"
+MQLPWD=$(mql -t -c "execute program PwdMgr -method getPwd 'creator';")
+ 
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "[ERROR] Input config file not found: $CONFIG_FILE"
+  exit 1
+fi
  
 #------------------------------------------------------------------------------
-# Step 2: Call the JPO method
+# Step 2: Read all file names into array
 #------------------------------------------------------------------------------
-echo ""
-echo "Step 2: Executing createOrActiveSupplierData with Start Date..."
-mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveSupplierData \"$STARTDATE\";"
+mapfile -t fileNames < "$CONFIG_FILE"
  
 #------------------------------------------------------------------------------
-# Step 3: Update the CronRun with execution time
+# Step 3: Loop through each file name and call JPO
 #------------------------------------------------------------------------------
-echo ""
-echo "Step 3: Updating CronRun.GO with current timestamp..."
-date +%m"/"%d"/"%Y" "%r >  $BASEDIR/../Config/CronRun.GO
-echo "Updated CronRun.GO successfully."
+
+mkdir -p "$LOG_DIR"
+
+for fileName in "${fileNames[@]}"; do
+  fileName=$(echo "$fileName" | xargs)  
+  inputFilePath="$INPUT_FOLDER/$fileName"
+
+  if [[ -n "$fileName" && -f "$inputFilePath" ]]; then
+    echo "Processing file: $inputFilePath"
+    
+    logFileName="${fileName%.*}_Log_$VDATE.log"
+    logFilePath="$LOG_DIR/$logFileName"
+
+    echo "------ LOG START FOR $fileName at $(date) ------" >> "$logFilePath"
+    
+    mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveBulkSupplierData \"$inputFilePath\";" >> "$logFilePath" 2>&1
+
+    echo "------ LOG END FOR $fileName at $(date) --------" >> "$logFilePath"
+  else
+    echo "[WARNING] File not found or empty entry: $inputFilePath"
+  fi
+done
  
-echo ""
-echo "Script completed at: $(date)"
- 
-} >> "$LOGFILE" 2>&1
+#------------------------------------------------------------------------------
+# Step 4: Update CronRun Time
+#------------------------------------------------------------------------------
+date +%m"/"%d"/"%Y" "%r > $BASEDIR/../Config/CronRunBulk.GO
