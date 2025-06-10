@@ -1,68 +1,70 @@
-public void createOrActiveBulkSupplierData(Context context, String[] args) throws Exception {
-    System.out.println("********** Inside createOrActiveSupplierBulkData (File Input) **********");
-	try {
-		String inputFilePath = args[0];
-		String logFilePath = args[1]; 
-		System.out.println("Get path in args: " + inputFilePath);
-		System.out.println("Get log in args: " + logFilePath);
-		java.io.File file = new java.io.File(inputFilePath);
-		if (!file.exists()) {
-			System.out.println("Input file does not exist: " + inputFilePath);
-			return;
-		}
+#!/bin/bash
+###############################################################################
+#     Script to Create or Activate Supplier/Site in SpecRight                 #
+#     Date:    June 2025                                                       #
+#     Author : TCS                                                            #
+###############################################################################
+ 
+VDATE=$(date +%Y-%m-%d_%H.%M)
+cronStartDate=$(date)
+FileDynamics=$(date +%m%d%Y)
+ 
+echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
+echo "Run Started At   : $cronStartDate"
+ 
+#------------------------------------------------------------------------------
+# Step 1: Setup
+#------------------------------------------------------------------------------
+BASEDIR=$(dirname "$0")
+LOG_DIR="$BASEDIR/../Log"
+echo "$LOG_DIR"
+CONFIG_FILE="$BASEDIR/../Config/inputFileList.txt"
+INPUT_FOLDER="$BASEDIR/../Config/input"
+MQLPWD=$(mql -t -c "execute program PwdMgr -method getPwd 'creator';")
+ 
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "Input config file not found: $CONFIG_FILE"
+  exit 1
+fi
+ 
+#------------------------------------------------------------------------------
+# Step 2: Read all file names into array
+#------------------------------------------------------------------------------
+mapfile -t fileNames < "$CONFIG_FILE"
+ 
+#------------------------------------------------------------------------------
+# Step 3: Loop through each file name and call JPO
+#------------------------------------------------------------------------------
+
+mkdir -p "$LOG_DIR"
+
+for fileName in "${fileNames[@]}"; do
+  fileName=$(echo "$fileName" | xargs)  
+  inputFilePath="$INPUT_FOLDER/$fileName"
+
+  if [[ -n "$fileName" && -f "$inputFilePath" ]]; then
+    echo "Processing file: $inputFilePath"
     
-		java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file));
-        BufferedWriter logWriter = new BufferedWriter(new FileWriter(logFilePath, true)); 
+    logFileName="${fileName%.*}_Log_$VDATE.log"
+	errorFileName = "${fileName%.*}_Error_Log_$VDATE.log"
+    logFilePath="$LOG_DIR/$logFileName"
+	echo "$logFilePath"
+	errorFilePath="$LOG_DIR/$errorFileName"
+	echo "$errorFilePath"
+
+    echo "------ LOG START FOR $fileName at $(date) ------" 
     
-        String supplierName = null;
+    mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveBulkSupplierData \"$inputFilePath\" \"$logFilePath\" \"$errorFilePath\";"
+	echo ""
+    echo "------ LOG END FOR $fileName at $(date) --------" 
+	echo ""
+  else
+    echo "[WARNING] File not found or empty entry: $inputFilePath"
+  fi
+done
  
-        while ((supplierName = reader.readLine()) != null) {
-            supplierName = supplierName.trim();
-            if (supplierName.isEmpty()) continue;
- 
-            System.out.println("Processing supplier/site: " + supplierName);
-            String strType = TYPE_ORGANIZATION;
-            String strRev = DomainConstants.QUERY_WILDCARD;
-            String whereClause = "current == Active";
-            StringList busSelects = new StringList();
-            busSelects.add(DomainConstants.SELECT_ID);
-            busSelects.add(DomainConstants.SELECT_NAME);
-            busSelects.add(DomainConstants.SELECT_CURRENT);
-            MapList resultList = getBusObjInfo(context, strType, supplierName, strRev, whereClause, busSelects);
- 
-            if (resultList.isEmpty()) {
-                System.out.println("No active supplier found with name: " + supplierName);
-                continue;
-            }
- 
-            for (Object result : resultList) {
-                Map<?, ?> resultMap = (Map<?, ?>) result;
-                String strObjectId = (String) resultMap.get(DomainConstants.SELECT_ID);
-                String sName = (String) resultMap.get(DomainConstants.SELECT_NAME);
-                String sState = (String) resultMap.get(DomainConstants.SELECT_CURRENT);
- 
-                System.out.println("Supplier found: ID=" + strObjectId + ", Name=" + sName + ", State=" + sState);
- 
-                String sTxnId = FrameworkUtil.autoName(context, "type_Transaction", "", "policy_Transaction", "vault_eServiceProduction");
-                DomainObject txnObject = DomainObject.newInstance(context, sTxnId);
- 
-                Map<String, String> hmAttributeMap = new HashMap<>();
-                hmAttributeMap.put(ATTRIBUTE_TRANSACTION_EVENT, "CreateorActivateSupplierSite");
-                hmAttributeMap.put(ATTRIBUTE_DC_SPEC_ID, strObjectId);
-                hmAttributeMap.put(ATTRIBUTE_DC_SPEC_NUMBER, sName);
-                txnObject.setAttributeValues(context, hmAttributeMap);
-                txnObject.setDescription(context, "SpecRight");
- 
-                txnObject.promote(context);
- 
-                String logLine = strObjectId + "~" + sName + "~" + sState + "~" + sTxnId;
-                logWriter.write(logLine);
-                logWriter.newLine();
-            }
-			
-        }
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        throw ex;
-    }
-	}
+#------------------------------------------------------------------------------
+# Step 4: Update CronRun Time
+#------------------------------------------------------------------------------
+date +%m"/"%d"/"%Y" "%r > $BASEDIR/../Config/CronRunBulk.GO
+echo "Script completed at: $(date)"
