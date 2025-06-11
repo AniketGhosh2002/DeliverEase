@@ -1,70 +1,107 @@
-#!/bin/bash
-###############################################################################
-#     Script to Create or Activate Supplier/Site in SpecRight                 #
-#     Date:    June 2025                                                       #
-#     Author : TCS                                                            #
-###############################################################################
- 
-VDATE=$(date +%Y-%m-%d_%H.%M)
-cronStartDate=$(date)
-FileDynamics=$(date +%m%d%Y)
- 
-echo "-------------------------------- CRON RUN DETAILS ---------------------------------"
-echo "Run Started At   : $cronStartDate"
- 
-#------------------------------------------------------------------------------
-# Step 1: Setup
-#------------------------------------------------------------------------------
-BASEDIR=$(dirname "$0")
-LOG_DIR="$BASEDIR/../Log"
-echo "$LOG_DIR"
-CONFIG_FILE="$BASEDIR/../Config/inputFileList.txt"
-INPUT_FOLDER="$BASEDIR/../Config/input"
-MQLPWD=$(mql -t -c "execute program PwdMgr -method getPwd 'creator';")
- 
-if [[ ! -f "$CONFIG_FILE" ]]; then
-  echo "Input config file not found: $CONFIG_FILE"
-  exit 1
-fi
- 
-#------------------------------------------------------------------------------
-# Step 2: Read all file names into array
-#------------------------------------------------------------------------------
-mapfile -t fileNames < "$CONFIG_FILE"
- 
-#------------------------------------------------------------------------------
-# Step 3: Loop through each file name and call JPO
-#------------------------------------------------------------------------------
+public HashMap<String, String> postSupplier(Context context, String[] args) throws Exception {
+		URL url;
+		OutputStream stream;
+		String inputLine = "";
+		String baseURL = EnoviaResourceBundle.getProperty(context, "TRUSpecRightDataLoader",context.getLocale(), "TRUSpecRightDataLoader.SpecRight.BaseUrl");
+		String postURL = "";
+		int responseCode = 0;
+		int retryCount = 0;
 
-mkdir -p "$LOG_DIR"
+		String jsonString = args[0];           
+		String accessToken = args[1];          
+		String postConnectionType = args[2];
+		
+		Map<String, String> responseMap = new HashMap<>();
+		
+		JSONObject content = new JSONObject(jsonString);
+		JSONObject json = new JSONObject();
+		json.put("content", content);
+		System.out.println(json.toString()); 
+		byte[] out = json.toString().trim().getBytes(StandardCharsets.UTF_8);
+		StringBuffer response = new StringBuffer();
+		String message = "";
+		String returnJsonString = "";
 
-for fileName in "${fileNames[@]}"; do
-  fileName=$(echo "$fileName" | xargs)  
-  inputFilePath="$INPUT_FOLDER/$fileName"
+		try {
+			while ((responseCode != 200 && responseCode != 201) && retryCount <= 3) {
+				URIBuilder uri = new URIBuilder(baseURL + postConnectionType);
+				System.out.println("POST to: " + uri.toString());
+				postURL = uri.toString();
+				url = uri.build().toURL();
+				HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+				con.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+				con.setRequestMethod("POST");
+				con.setDoOutput(true);
 
-  if [[ -n "$fileName" && -f "$inputFilePath" ]]; then
-    echo "Processing file: $inputFilePath"
-    
-    logFileName="${fileName%.*}_Log_$VDATE.log"
-	errorFileName = "${fileName%.*}_Error_Log_$VDATE.log"
-    logFilePath="$LOG_DIR/$logFileName"
-	echo "$logFilePath"
-	errorFilePath="$LOG_DIR/$errorFileName"
-	echo "$errorFilePath"
+				String auth = "Bearer " + accessToken;
 
-    echo "------ LOG START FOR $fileName at $(date) ------" 
-    
-    mql -c "set context user creator pass $MQLPWD; exec prog TRUSpecRightDataLoader -method createOrActiveBulkSupplierData \"$inputFilePath\" \"$logFilePath\" \"$errorFilePath\";"
-	echo ""
-    echo "------ LOG END FOR $fileName at $(date) --------" 
-	echo ""
-  else
-    echo "[WARNING] File not found or empty entry: $inputFilePath"
-  fi
-done
- 
-#------------------------------------------------------------------------------
-# Step 4: Update CronRun Time
-#------------------------------------------------------------------------------
-date +%m"/"%d"/"%Y" "%r > $BASEDIR/../Config/CronRunBulk.GO
-echo "Script completed at: $(date)"
+				con.setRequestProperty("Content-Type", "application/json");
+				con.setRequestProperty("x-user-id", "api@specright.com.kenvuedev");
+				con.setRequestProperty("x-api-key", "he6rFkRDeEvrwAg9Dl70d3Fox0aNfmB82EwHQdzI");
+				con.setRequestProperty("Authorization", auth);
+				con.setConnectTimeout(60000);
+
+				stream = con.getOutputStream();
+				stream.write(out);
+				stream.flush();
+
+				responseCode = con.getResponseCode();
+				if (responseCode == 200 || responseCode == 201) {
+					BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+					while ((inputLine = in.readLine()) != null) {
+						response.append(inputLine);
+					}
+					in.close();
+					returnJsonString = response.toString();
+					System.out.println(response.toString());
+				} else {
+					BufferedReader in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+					StringBuffer errorResponse = new StringBuffer();
+					while ((inputLine = in.readLine()) != null) {
+						errorResponse.append(inputLine);
+					}
+					in.close();
+					System.out.println("Error Response: " + errorResponse.toString());
+					returnJsonString = errorResponse.toString();
+				}
+
+				retryCount++;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			inputLine = "Exception: " + e.getMessage();
+		}
+		
+		HashMap<String, String> postReturnMap = new HashMap<String, String>();
+		postReturnMap.put("ResponseCode", Integer.toString(responseCode));
+		postReturnMap.put("ResponseUrl", postURL);
+		postReturnMap.put("Response", returnJsonString);
+
+		return postReturnMap;
+	}
+
+
+
+
+
+getting error while response code 404
+
+
+java.lang.NullPointerException
+        at java.base/java.io.Reader.<init>(Reader.java:167)
+        at java.base/java.io.InputStreamReader.<init>(InputStreamReader.java:72)
+        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.postSupplier(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.java:3651)
+        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.createOrActiveBulkSupplierData(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.java:2801)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:572)
+        at matrix.db.JPOSupport.invokeObject(JPOSupport.java:442)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:572)
+        at com.dassault_systemes.platform.ipmodeling.jni.EnoviaKernelUtils._invoke(EnoviaKernelUtils.java:71)
+        at com.dassault_systemes.platform.ipmodeling.jni.EnoviaKernelUtils.invoke(EnoviaKernelUtils.java:51)
+        at com.dassault_systemes.platform.ipmodeling.jni.EnoviaKernelUtils.invokeObject(EnoviaKernelUtils.java:148)
