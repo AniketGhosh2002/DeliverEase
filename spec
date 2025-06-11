@@ -62,7 +62,14 @@ public HashMap<String, String> postSupplier(Context context, String[] args) thro
 					}
 					in.close();
 					System.out.println("Error Response: " + errorResponse.toString());
-					returnJsonString = errorResponse.toString();
+					String errorJson = errorResponse.toString();
+
+					JSONObject obj = new JSONObject(errorJson);
+					if (obj.has("message")) {
+						message = obj.getString("message");
+					}
+					returnJsonString = message;
+					System.out.println("Message: "+message);
 				}
 
 				retryCount++;
@@ -85,14 +92,13 @@ public HashMap<String, String> postSupplier(Context context, String[] args) thro
 
 
 
-getting error while response code 404
-
+getting error while response code is 404
 
 java.lang.NullPointerException
         at java.base/java.io.Reader.<init>(Reader.java:167)
         at java.base/java.io.InputStreamReader.<init>(InputStreamReader.java:72)
-        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.postSupplier(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.java:3651)
-        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.createOrActiveBulkSupplierData(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d47.java:2801)
+        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d6e.postSupplier(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d6e.java:3650)
+        at TRUSpecRightDataLoader_mxJPO3e650e6c0100000d6e.createOrActiveBulkSupplierData(TRUSpecRightDataLoader_mxJPO3e650e6c0100000d6e.java:2801)
         at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
         at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
         at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
