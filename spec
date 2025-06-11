@@ -8,13 +8,16 @@ TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.OrganizationFaxNumber=Fax
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.WebSite=Website
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.DESCRIPTION=Description
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.STAGE=specright__Status__c
+TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Value.Stage=Commercial
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.VendorId=specright__Vendor_ID__c
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Region=SR_Region_Located__c
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.AlternateName=SR_Alternate_Supplier_Name_s__c
-TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.SUPPLIERTYPE=SR_Supplier_Type__c
+TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.SupplierType=SR_Supplier_Type__c
+TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Value.SupplierType=Primary
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.City=SR_Supplier_City__c
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Country=SR_Supplier_Country__c
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Active=specright__Active2__c
+TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.Value.Active=Yes
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.RecordType=RecordTypeId
 TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.InternalExternal=SR_Internal_External__c
 TRUSpecRightDataLoader.SpecRight.Tag.Supplier.RECORDTYPEID=012am000001rh3cAAA
@@ -75,4 +78,22 @@ jsonContent.put(name, strName);
 					jsonContent.put(internalExternal, externalOrNot);
 					jsonContent.put(recordType, recordTypeId);
 
-I want it to have a map with key value so that i can put in json using a loop
+I want it to have a map with key value so that i can put in json using a loop like this one below
+String fieldList = EnoviaResourceBundle.getProperty(context, "TRUSpecRightDataLoader",context.getLocale(), "TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite.FieldList");
+			StringList attributeList = new StringList();
+			if (UIUtil.isNotNullAndNotEmpty(fieldList)) {
+				String[] fieldArray = fieldList.split(",");
+				for (String fields : fieldArray) {
+					String key = fields.trim();
+					attributeList.add(key);
+					String getAttr = PropertyUtil.getSchemaProperty("attribute_" + key);
+					selectList.add("attribute[" + getAttr + "]");
+				}
+			}
+
+for(int i=0; i<attributeList.size(); i++){
+						String attributeName = EnoviaResourceBundle.getProperty(context, "TRUSpecRightDataLoader",context.getLocale(), "TRUSpecRightDataLoader.SpecRight.Tag.SupplierFillSite."+attributeList.get(i));
+						String setAttr = PropertyUtil.getSchemaProperty("attribute_" + attributeList.get(i));
+						String attributeValue = (String) hashObjmap.get("attribute[" + setAttr + "]");
+						jsonContent.put(attributeName, attributeValue);
+					}
