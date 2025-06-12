@@ -1,1 +1,1 @@
- This method is called from the CronJob which have the Supplier/Impacted Site names in a input. It takes the input file path and try to get the Supplier/Impacted Site details from TRU and do POST or PATCH based on Supplier/Fill Site present on SpecRight
+This method is called from the CronJob, which receives the Supplier/Impacted Site names as input. It takes the input file path, retrieves the Supplier/Impacted Site details from TRU, and performs a POST or PATCH request based on whether the Supplier/Fill Site is present in SpecRight.
