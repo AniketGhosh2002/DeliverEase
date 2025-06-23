@@ -1,28 +1,53 @@
-getInfo
- 
-Map truSupplierAttrMap{
+Top5Base = 
+UNION (
+    // Top 5 Songs
+    SELECTCOLUMNS (
+        TOPN (
+            5,
+            ADDCOLUMNS (
+                SUMMARIZE ( spotify_history, spotify_history[track_name] ),
+                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
+                "Played", CALCULATE ( COUNT ( spotify_history[track_name] ) )
+            ),
+            [TotalPlayTime], DESC
+        ),
+        "Type", "Song",
+        "Name", [track_name],
+        "TotalPlayTime", [TotalPlayTime],
+        "Played", [Played]
+    ),
 
-	Name: dhsd
+    // Top 5 Albums
+    SELECTCOLUMNS (
+        TOPN (
+            5,
+            ADDCOLUMNS (
+                SUMMARIZE ( spotify_history, spotify_history[album_name] ),
+                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
+                "Played", CALCULATE ( COUNT ( spotify_history[album_name] ) )
+            ),
+            [TotalPlayTime], DESC
+        ),
+        "Type", "Album",
+        "Name", [album_name],
+        "TotalPlayTime", [TotalPlayTime],
+        "Played", [Played]
+    ),
 
-	State: ngvac
-
-	Country: gvsad
-
-}
-
-truFieldlist = 
-
-for(int i=0;i<truFieldlist.size();i++){
-
-	truField = truSupplierAttrMap.get(i);
-
-	truvalue = truSupplierAttrMap.get(truField);
-
-	string specrightFieldName = "tru.spec.hd"+truField;
-
-	JsonMap.put(specrightFieldName,truvalue);
-
-	}
-
-}
- 
+    // Top 5 Artists
+    SELECTCOLUMNS (
+        TOPN (
+            5,
+            ADDCOLUMNS (
+                SUMMARIZE ( spotify_history, spotify_history[artist_name] ),
+                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
+                "Played", CALCULATE ( COUNT ( spotify_history[artist_name] ) )
+            ),
+            [TotalPlayTime], DESC
+        ),
+        "Type", "Artist",
+        "Name", [artist_name],
+        "TotalPlayTime", [TotalPlayTime],
+        "Played", [Played]
+    )
+)
