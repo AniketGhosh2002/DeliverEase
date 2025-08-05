@@ -1,32 +1,22 @@
-public void sendEmail (String sFromMailId , String sToMailId, String sCCMailId, String sMailSubject, String sMailBody) throws Exception {
-		boolean sSendMail = true;
-		//compose the message  
+public void createOrActiveSupplierData(Context context, String[] args) throws Exception{
+		FileWriter logWriter = null;
+
 		try {
-
-			//Get the session object  
-			Properties properties = System.getProperties();
-			properties.setProperty("mail.smtp.host", strSmtpHost);
-			Session session = Session.getDefaultInstance(properties);  
-			MimeMessage message = new MimeMessage(session);
-
-			message.setFrom(new InternetAddress(sFromMailId));
-			message.setSubject(sMailSubject);
-			if (null != sToMailId && !"".equals(sToMailId))
-			{
-				InternetAddress aInternetAddress[] = InternetAddress.parse(sToMailId.trim());
-				message.setRecipients(Message.RecipientType.TO, aInternetAddress);
-				if(null!=sCCMailId && !"".equals(sCCMailId))
-				{
-					InternetAddress aInternetAddressCC[] = InternetAddress.parse(sCCMailId.trim());
-					message.setRecipients(Message.RecipientType.CC, aInternetAddressCC);
-				}
-			}
-			message.setContent(sMailBody.replaceAll("\n", "<br />"),"text/html");  
-
-			if(sSendMail)
-				javax.mail.Transport.send(message);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+			logWriter = generateLogWriter();
+			logWriter.write("Execution started at " + new Date());
+			logWriter.write(System.lineSeparator());
+			logWriter.write(System.lineSeparator());
+			
+			//Generate access token 
+			String accessToken = generateToken(context);
+			if(UIUtil.isNotNullAndNotEmpty(accessToken)){
+        		//Get parameter from the shell script
+        		String cronTime = args[0];
+        		String whereClause = "state[Active].actual > '"+cronTime+"' && " + DomainConstants.SELECT_CURRENT + " == Active";
+        		StringList busSelects = new StringList();
+        		busSelects.add(DomainConstants.SELECT_ID);
+        		MapList resultList  = getBusObjInfo(context,TYPE_ORGANIZATION,DomainConstants.QUERY_WILDCARD,DomainConstants.QUERY_WILDCARD,whereClause,busSelects);
+	  	}
+    }catch(){
+    }
+    }
