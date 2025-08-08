@@ -8,14 +8,20 @@ set base_dir [pwd]
 set input_dir "$base_dir/input"
 set inputFileList_path "$base_dir/inputFileList.txt"
 set error_file_path "$base_dir/errorFile.txt"
+set inactive_file_path "$base_dir/inactiveSupplierSiteList.txt"
 
 # Create directories if not present
 if {![file exists $input_dir]} {
     file mkdir $input_dir
 }
 
-# Query MQL
-set output [split [mql temp que bus "Organization" * * where "current==Active" select id attribute\[Entity Type\].value attribute\[Region\].value attribute\[Organization Phone Number\].value name dump ~;] "\n"]
+# -------------------------
+# STEP 1: Process Active Units
+# -------------------------
+set output [split [mql temp que bus "Organization" * * \
+    where "current==Active" \
+    select id attribute\[Entity Type\].value attribute\[Region\].value \
+           attribute\[Organization Phone Number\].value name dump ~;] "\n"]
 
 set batch_size 1000
 set total_lines [llength $output]
@@ -35,11 +41,11 @@ for {set i 0} {$i < $total_lines} {incr i $batch_size} {
 
     foreach line $batch {
         set fields [split $line "~"]
-		set objectId   [string trim [lindex $fields 3]]
-        set entityType [string trim [lindex $fields 4]]
-        set region     [string trim [lindex $fields 5]]
-        set phone      [string trim [lindex $fields 6]]
-        set name       [string trim [lindex $fields 7]]
+        set objectId   [string trim [lindex $fields 0]]
+        set entityType [string trim [lindex $fields 1]]
+        set region     [string trim [lindex $fields 2]]
+        set phone      [string trim [lindex $fields 3]]
+        set name       [string trim [lindex $fields 4]]
 
         # Collect all error reasons
         set errors {}
@@ -49,7 +55,7 @@ for {set i 0} {$i < $total_lines} {incr i $batch_size} {
         if {$region eq ""} {
             lappend errors "Missing Region"
         }
-		if {$name eq ""} {
+        if {$name eq ""} {
             lappend errors "Missing Name"
         }
         if {[string length $phone] > 40} {
@@ -70,4 +76,25 @@ for {set i 0} {$i < $total_lines} {incr i $batch_size} {
 
 close $inputFileList_id
 close $error_file_id
+
+
+# -------------------------
+# STEP 2: Process Inactive Units
+# -------------------------
+set inactive_output [split [mql temp que bus "Organization" * * \
+    where "current==Inactive" \
+    select id name dump ~;] "\n"]
+
+set inactive_file_id [open $inactive_file_path "w"]
+
+foreach line $inactive_output {
+    set fields [split $line "~"]
+    set objectId [string trim [lindex $fields 0]]
+    set name     [string trim [lindex $fields 1]]
+
+    puts $inactive_file_id "$objectId - $name"
+}
+
+close $inactive_file_id
+
 }
