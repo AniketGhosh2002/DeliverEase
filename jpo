@@ -1,53 +1,106 @@
-Top5Base = 
-UNION (
-    // Top 5 Songs
-    SELECTCOLUMNS (
-        TOPN (
-            5,
-            ADDCOLUMNS (
-                SUMMARIZE ( spotify_history, spotify_history[track_name] ),
-                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
-                "Played", CALCULATE ( COUNT ( spotify_history[track_name] ) )
-            ),
-            [TotalPlayTime], DESC
-        ),
-        "Type", "Song",
-        "Name", [track_name],
-        "TotalPlayTime", [TotalPlayTime],
-        "Played", [Played]
-    ),
+# ###########################################################################################
+# Purpose of TCL Script - To Extract all active Supplier/Impacted Site name present in TRU	#
+#         				  and create batch files for bulk load in SpecRight					#
+#  Developed By 		- Aniket Ghosh TCS				  									#
+# ###########################################################################################
+tcl;
+eval {
 
-    // Top 5 Albums
-    SELECTCOLUMNS (
-        TOPN (
-            5,
-            ADDCOLUMNS (
-                SUMMARIZE ( spotify_history, spotify_history[album_name] ),
-                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
-                "Played", CALCULATE ( COUNT ( spotify_history[album_name] ) )
-            ),
-            [TotalPlayTime], DESC
-        ),
-        "Type", "Album",
-        "Name", [album_name],
-        "TotalPlayTime", [TotalPlayTime],
-        "Played", [Played]
-    ),
+set base_dir [pwd]  
+set input_dir "$base_dir/input"
+set inputFileList_path "$base_dir/inputFileList.txt"
+set error_file_path "$base_dir/errorFile.txt"
+set inactive_file_path "$base_dir/inactiveSupplierSiteList.txt"
 
-    // Top 5 Artists
-    SELECTCOLUMNS (
-        TOPN (
-            5,
-            ADDCOLUMNS (
-                SUMMARIZE ( spotify_history, spotify_history[artist_name] ),
-                "TotalPlayTime", CALCULATE ( SUM ( spotify_history[ms_played] ) ),
-                "Played", CALCULATE ( COUNT ( spotify_history[artist_name] ) )
-            ),
-            [TotalPlayTime], DESC
-        ),
-        "Type", "Artist",
-        "Name", [artist_name],
-        "TotalPlayTime", [TotalPlayTime],
-        "Played", [Played]
-    )
-)
+if {![file exists $input_dir]} {
+    file mkdir $input_dir
+}
+
+# ------------------------------------------------
+# STEP 1: Process Active Supplier / Impacted Sites
+# ------------------------------------------------
+set output [split [mql temp que bus "Organization" * * where "current==Active" select id attribute\[Entity Type\].value attribute\[Region\].value attribute\[Organization Phone Number\].value attribute\[Organization Fax Number\].value attribute\[Postal Code\].value name dump ~;] "\n"]
+
+set batch_size 500
+set total_lines [llength $output]
+set file_index 1
+set inputFileList_id [open $inputFileList_path "w"]
+set error_file_id [open $error_file_path "w"]
+
+for {set i 0} {$i < $total_lines} {incr i $batch_size} {
+    set batch [lrange $output $i [expr {$i + $batch_size - 1}]]
+    set batch_filename [format "batch_%03d.txt" $file_index]
+    set full_batch_path "$input_dir/$batch_filename"
+
+    puts $inputFileList_id $batch_filename
+    set batch_file_id [open $full_batch_path "w"]
+
+    foreach line $batch {
+        set fields [split $line "~"]
+        set name       [string trim [lindex $fields 1]]
+        set objectId   [string trim [lindex $fields 3]]
+        set entityType [string trim [lindex $fields 4]]
+        set region     [string trim [lindex $fields 5]]
+        set phone      [string trim [lindex $fields 6]]
+		set fax        [string trim [lindex $fields 7]]
+		set pin        [string trim [lindex $fields 8]]
+
+		set allowedRegions {"Global" "North America" "Latin America" "Asia Pacific" "EMEA"}
+		set allowedEntityTypes {"Other" "Supplier: Manufacturer" "Supplier: Distributor" "Business Location" "R&D" "Laboratory" "Co-packers" "Marketing Company" "Internal Manufacturing" "External Packaging" "External Manufacturing" "Distribution Center" "Company"}
+		
+        set errors {}
+        if {$entityType eq ""} {
+            lappend errors "Missing Entity Type"
+        } elseif {[lsearch -exact $allowedEntityTypes $entityType] == -1} {
+			lappend errors "Invalid Entity Type: $entityType"
+		}
+        if {$region eq ""} {
+			lappend errors "Missing Region"
+		} elseif {[lsearch -exact $allowedRegions $region] == -1} {
+			lappend errors "Invalid Region: $region"
+		}
+        if {$name eq ""} {
+            lappend errors "Missing Name"
+        }
+        if {[string length $phone] > 40} {
+            lappend errors "Phone Number too long ([string length $phone] chars)"
+        }
+		if {[string length $fax] > 40} {
+            lappend errors "Fax Number too long ([string length $fax] chars)"
+        }
+		if {[string length $pin] > 20} {
+            lappend errors "Postal Code too long ([string length $pin] chars)"
+        }
+
+        if {[llength $errors] > 0} {
+            puts $error_file_id "$objectId - $name - [join $errors {; }]"
+        } else {
+            puts $batch_file_id $name
+        }
+    }
+
+    close $batch_file_id
+    incr file_index
+}
+
+close $inputFileList_id
+close $error_file_id
+
+# --------------------------------------------------
+# STEP 2: Process Inactive Supplier / Impacted Sites
+# --------------------------------------------------
+set inactive_output [split [mql temp que bus "Organization" * * where "current==Inactive" select id dump ~;] "\n"]
+
+set inactive_file_id [open $inactive_file_path "w"]
+
+foreach line $inactive_output {
+    set fields [split $line "~"]
+    set name     [string trim [lindex $fields 1]]
+    set objectId [string trim [lindex $fields 3]]
+
+    puts $inactive_file_id "$objectId - $name"
+}
+
+close $inactive_file_id
+
+}
