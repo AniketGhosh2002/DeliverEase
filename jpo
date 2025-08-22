@@ -14,37 +14,41 @@ set supplier_site_id [open $supplier_site_path "w"]
 puts $supplier_site_id "\"Type\",\"Name\",\"Revision\",\"Object Id\",\"Region\",\"State/Region\",\"Entity Type\",\"Organization Phone Number\",\"Organization Fax Number\",\"Postal Code\",\"Web Site\",\"Alternate Name\",\"City\",\"Country\",\"Validation Comment\""
  
 proc csv_escape {field} {
-    regsub -all {"} $field {""} field
+	regsub -all {\n} $field { } field
+	regsub -all {\r} $field { } field
     return "\"$field\""
 }
  
 foreach line $output {
     set fields              [split $line "^|~"]
 	set type            [string trim [lindex $fields 0]]
-	set name            [string trim [lindex $fields 1]]
-	set rev             [string trim [lindex $fields 2]]
-    set objectId        [string trim [lindex $fields 3]]
-	set current         [string trim [lindex $fields 4]]
-    set entityType      [string trim [lindex $fields 5]]
-    set phone           [string trim [lindex $fields 6]]
-	set fax             [string trim [lindex $fields 7]]
-	set pin             [string trim [lindex $fields 8]]
-	set state           [string trim [lindex $fields 9]]
-	set alternateName   [string trim [lindex $fields 10]]
-	set city            [string trim [lindex $fields 11]]
-	set country         [string trim [lindex $fields 12]]
-	set website         [string trim [lindex $fields 13]]
-	set region1         [string trim [lindex $fields 14]]
-	set region2         [string trim [lindex $fields 15]]
-	set region3         [string trim [lindex $fields 16]]
-	set region4         [string trim [lindex $fields 17]]
-	set region5         [string trim [lindex $fields 18]]
+	set name            [string trim [lindex $fields 3]]
+	set rev             [string trim [lindex $fields 6]]
+    set objectId        [string trim [lindex $fields 9]]
+	set current         [string trim [lindex $fields 12]]
+    set entityType      [string trim [lindex $fields 15]]
+    set phone           [string trim [lindex $fields 18]]
+	set fax             [string trim [lindex $fields 21]]
+	set pin             [string trim [lindex $fields 24]]
+	set state           [string trim [lindex $fields 27]]
+	set alternateName   [string trim [lindex $fields 30]]
+	set city            [string trim [lindex $fields 33]]
+	set country         [string trim [lindex $fields 36]]
+	set website         [string trim [lindex $fields 39]]
+	set region1         [string trim [lindex $fields 42]]
+	set region2         [string trim [lindex $fields 45]]
+	set region3         [string trim [lindex $fields 48]]
+	set region4         [string trim [lindex $fields 51]]
+	set region5         [string trim [lindex $fields 54]]
  
 	set allowedRegions {"Global" "North America" "Latin America" "Asia Pacific" "EMEA" ""}
 	set allowedEntityTypes {"Other" "Supplier: Manufacturer" "Supplier: Distributor" "Business Location" "R&D" "Laboratory" "Co-packers" "Marketing Company" "Internal Manufacturing" "External Packaging" "External Manufacturing" "Distribution Center" "Company"}
  
     set errors {}
 	set regionFields [list $region1 $region2 $region3 $region4 $region5]
+	if {$regionFields eq ""} {
+		lappend errors "Missing Region"
+	}
 	foreach region $regionFields {
 		if {$region ne ""} {
 			if {[lsearch -exact $allowedRegions $region] == -1} {
@@ -57,38 +61,35 @@ foreach line $output {
     } elseif {[lsearch -exact $allowedEntityTypes $entityType] == -1} {
 		lappend errors "Invalid Entity Type: $entityType"
 	}
-    if {$region1 eq ""} {
-		lappend errors "Missing Region"
-	}
     if {$name eq ""} {
         lappend errors "Missing Name for Object Id - $objectId"
     }
 	if {[string length $name] > 255} {
-        lappend errors "Name longer than 255 chars)"
+        lappend errors "Name longer than 255 chars"
     }
 	if {[string length $state] > 255} {
-        lappend errors "State longer than 255 chars)"
+        lappend errors "State longer than 255 chars"
     }
     if {[string length $phone] > 40} {
-        lappend errors "Phone Number longer than 40 chars)"
+        lappend errors "Phone Number longer than 40 chars"
     }
 	if {[string length $fax] > 40} {
-        lappend errors "Fax Number longer than 40 chars)"
+        lappend errors "Fax Number longer than 40 chars"
     }
 	if {[string length $pin] > 20} {
-        lappend errors "Postal Code longer than 20 chars)"
+        lappend errors "Postal Code longer than 20 chars"
     }
 	if {[string length $website] > 255} {
-        lappend errors "Web Site longer than 255 chars)"
+        lappend errors "Web Site longer than 255 chars"
     }
 	if {[string length $alternateName] > 255} {
-        lappend errors "Alternate Name longer than 255 chars)"
+        lappend errors "Alternate Name longer than 255 chars"
     }
 	if {[string length $city] > 255} {
-        lappend errors "City longer than 255 chars)"
+        lappend errors "City longer than 255 chars"
     }
 	if {[string length $country] > 255} {
-        lappend errors "Country longer than 255 chars)"
+        lappend errors "Country longer than 255 chars"
     }
  
 	set validationComment [join $errors {; }]
