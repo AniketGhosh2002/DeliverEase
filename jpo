@@ -13,3 +13,29 @@ Attempting to use a delegate that only supports static-sized tensors with a grap
 [54736:59548:0914/002131.380:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
 Popup not found, skipping...
 Element not found
+
+
+
+
+
+try:
+    elem = driver.find_element(By.CSS_SELECTOR, ".ds-coachmark-close.fonticon.fonticon-wrong")
+    elem.click()
+except NoSuchElementException:
+    print("Popup not found, skipping...")
+time.sleep(5)
+
+try:
+    elem = driver.find_element(By.CSS_SELECTOR, ".add.topbar-menu-item.topbar-cmd.enabled.fonticon.fonticon-plus.active")
+    elem.click()
+except NoSuchElementException:
+    print("Popup not found, skipping...")
+time.sleep(5)
+
+try:
+    elem = driver.find_element(By.XPATH, "//*[@id='be9e90c4-78b7-45ad-95a5-c862ef82e2d0/c66']")
+    elem.click()
+    print("Element found")
+except NoSuchElementException:
+    print("Element not found")
+driver.close()
