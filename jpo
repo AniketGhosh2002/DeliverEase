@@ -1,21 +1,20 @@
 python automation.py
 
-DevTools listening on ws://127.0.0.1:53337/devtools/browser/f421d1d2-b2c4-472f-8f1c-88db9353064e
+DevTools listening on ws://127.0.0.1:56292/devtools/browser/8143ceae-e31b-4a78-a1cd-829a39423e6f
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1757788047.637904   30372 voice_transcription.cc:58] Registering VoiceTranscriptionCapability
-[59968:59828:0913/235728.244:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
-[59968:59828:0913/235728.272:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
-[59968:59828:0913/235728.332:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+I0000 00:00:1757788677.535145    9800 voice_transcription.cc:58] Registering VoiceTranscriptionCapability
+[63112:61216:0914/000758.401:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[63112:61216:0914/000758.452:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
 Created TensorFlow Lite XNNPACK delegate for CPU.
 Attempting to use a delegate that only supports static-sized tensors with a graph that has dynamic-sized tensors (tensor#-1 is a dynamic-sized tensor).
-[59968:59828:0913/235750.164:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
-[59968:59828:0913/235754.961:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
-[59968:59828:0913/235835.033:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
-[59968:59828:0913/235837.213:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[63112:61216:0914/000822.322:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[63112:61216:0914/000824.773:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[63112:61216:0914/000905.084:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[63112:61216:0914/000909.164:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
 Traceback (most recent call last):
-  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\automation.py", line 15, in <module>
-    elem = driver.find_element(By.CLASS_NAME, "ds-coachmark-close fonticon fonticon-wrong")
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\automation.py", line 23, in <module>
+    elem = driver.find_element(By.ID, "be9e90c4-78b7-45ad-95a5-c862ef82e2d0/c66")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 926, in find_element
     return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +22,7 @@ Traceback (most recent call last):
     self.error_handler.check_response(response)
   File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
     raise exception_class(message, screen, stacktrace)
-selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":".ds-coachmark-close fonticon fonticon-wrong"}
+selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":"[id="be9e90c4-78b7-45ad-95a5-c862ef82e2d0/c66"]"}
   (Session info: chrome=139.0.7258.155); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
 Stacktrace:
         GetHandleVerifier [0x0x7ff78f333d85+79397]
