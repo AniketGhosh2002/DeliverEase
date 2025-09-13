@@ -1,8 +1,49 @@
-PS C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\HandsOnProject\AgenticAI-Employee> conda create -p venv python=3.10 -y
-conda : The term 'conda' is not recognized as the name of a cmdlet, function, script file, or operable program.     
-Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-At line:1 char:1
-+ conda create -p venv python=3.10 -y
-+ ~~~~~
-    + CategoryInfo          : ObjectNotFound: (conda:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
+python automation.py
+
+DevTools listening on ws://127.0.0.1:53337/devtools/browser/f421d1d2-b2c4-472f-8f1c-88db9353064e
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1757788047.637904   30372 voice_transcription.cc:58] Registering VoiceTranscriptionCapability
+[59968:59828:0913/235728.244:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[59968:59828:0913/235728.272:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[59968:59828:0913/235728.332:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+Created TensorFlow Lite XNNPACK delegate for CPU.
+Attempting to use a delegate that only supports static-sized tensors with a graph that has dynamic-sized tensors (tensor#-1 is a dynamic-sized tensor).
+[59968:59828:0913/235750.164:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[59968:59828:0913/235754.961:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[59968:59828:0913/235835.033:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[59968:59828:0913/235837.213:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+Traceback (most recent call last):
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\automation.py", line 15, in <module>
+    elem = driver.find_element(By.CLASS_NAME, "ds-coachmark-close fonticon fonticon-wrong")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 926, in find_element
+    return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 458, in execute
+    self.error_handler.check_response(response)
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":".ds-coachmark-close fonticon fonticon-wrong"}
+  (Session info: chrome=139.0.7258.155); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+Stacktrace:
+        GetHandleVerifier [0x0x7ff78f333d85+79397]
+        GetHandleVerifier [0x0x7ff78f333de0+79488]
+        (No symbol) [0x0x7ff78f0dc0fa]
+        (No symbol) [0x0x7ff78f132fd6]
+        (No symbol) [0x0x7ff78f13328c]
+        (No symbol) [0x0x7ff78f186537]
+        (No symbol) [0x0x7ff78f15b1df]
+        (No symbol) [0x0x7ff78f183344]
+        (No symbol) [0x0x7ff78f15af73]
+        (No symbol) [0x0x7ff78f1241b1]
+        (No symbol) [0x0x7ff78f124f43]
+        GetHandleVerifier [0x0x7ff78f5fe1ed+3005069]
+        GetHandleVerifier [0x0x7ff78f5f831d+2980797]
+        GetHandleVerifier [0x0x7ff78f617e0d+3110573]
+        GetHandleVerifier [0x0x7ff78f34d6de+184190]
+        GetHandleVerifier [0x0x7ff78f35516f+215567]
+        GetHandleVerifier [0x0x7ff78f33c974+115220]
+        GetHandleVerifier [0x0x7ff78f33cb29+115657]
+        GetHandleVerifier [0x0x7ff78f323268+11016]
+        BaseThreadInitThunk [0x0x7ffecb98259d+29]
+        RtlUserThreadStart [0x0x7ffecd48af78+40]
