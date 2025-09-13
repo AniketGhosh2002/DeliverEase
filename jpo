@@ -1,42 +1,6 @@
-python automation.py
-
-DevTools listening on ws://127.0.0.1:62556/devtools/browser/0f3d95b8-92a1-41ba-95a1-b72c504c2d2c
-WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1757789416.559020   61244 voice_transcription.cc:58] Registering VoiceTranscriptionCapability
-[54736:59548:0914/002017.733:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
-[54736:59548:0914/002017.779:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
-Created TensorFlow Lite XNNPACK delegate for CPU.
-Attempting to use a delegate that only supports static-sized tensors with a graph that has dynamic-sized tensors (tensor#-1 is a dynamic-sized tensor).
-[54736:59548:0914/002041.328:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
-[54736:59548:0914/002047.210:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
-[54736:59548:0914/002125.634:ERROR:google_apis\gcm\engine\connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
-[54736:59548:0914/002131.380:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
-Popup not found, skipping...
-Element not found
+i wanted to click product engineering button
+<li class="item topbar-menu-dd-item item-submenu" id="29493485-d0e4-4266-b789-45d61bf4b599/c704" title="" name="29493485-d0e4-4266-b789-45d61bf4b599/c704"><div class="item item-template" id="29493485-d0e4-4266-b789-45d61bf4b599/c704"><span class="item-text">Product Engineering</span></div><div class="next-icon"><span class="fonticon fonticon-right-open"></span></div></li>
 
 
-<div class="add topbar-menu-item topbar-cmd enabled fonticon fonticon-plus active" title=""><span class="topbar-menu-item-badge" style="display: none;"></span><span class="topbar-floating-arrow" style=""></span></div>
-
-
-
-try:
-    elem = driver.find_element(By.CSS_SELECTOR, ".ds-coachmark-close.fonticon.fonticon-wrong")
-    elem.click()
-except NoSuchElementException:
-    print("Popup not found, skipping...")
-time.sleep(5)
-
-try:
-    elem = driver.find_element(By.CSS_SELECTOR, ".add.topbar-menu-item.topbar-cmd.enabled.fonticon.fonticon-plus.active")
-    elem.click()
-except NoSuchElementException:
-    print("Popup not found, skipping...")
-time.sleep(5)
-
-try:
-    elem = driver.find_element(By.XPATH, "//*[@id='be9e90c4-78b7-45ad-95a5-c862ef82e2d0/c66']")
-    elem.click()
-    print("Element found")
-except NoSuchElementException:
-    print("Element not found")
-driver.close()
+this is whole div i first need to hover here my pointer
+<div class="topbar-menu-dd responsive-dropdown-menu add" style="left: 832px; top: 43px;"><div class="scrollable-dropdown-menu scrollable-dropdown-menu-root dropdown-menu dropdown-menu-root dropdown-menu dropdown-menu-root dropdown dropdown-root responsive-dropdown-menu-root active" style="z-index: 26; height: 93px; width: 218px; overflow: hidden;"><div class="no-native-scrollbars  scroller-content"><ul class="dropdown-menu-wrap" tabindex="1"><li class="item topbar-menu-dd-item item-submenu" id="14f07a05-b33d-4577-88bd-6035b566a006/c704" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c704"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c704"><span class="item-text">Product Engineering</span></div><div class="next-icon"><span class="fonticon fonticon-right-open"></span></div></li><li class="item topbar-menu-dd-item item-submenu" id="14f07a05-b33d-4577-88bd-6035b566a006/c709" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c709"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c709"><span class="item-text">Generate Report</span></div><div class="next-icon"><span class="fonticon fonticon-right-open"></span></div></li></ul></div><div class="scroller-scrollbar scroller-scrollbar-x" style="left: 0px; width: 214.018px; display: none;"></div><div class="scroller-scrollbar scroller-scrollbar-y" style="top: 0px; height: 50px;"></div></div><div class="dropdown-menu dropdown-menu-root responsive  scroller scroller-root bottom-right conceal" style="z-index: 26; overflow: hidden; height: 93px; width: 259px; right: 217px; top: 48px; display: none;"><div class="no-native-scrollbars  scroller-content"><ul class="dropdown-menu-wrap" tabindex="1"><li class="item item-back" id="itm-0ee90b" title=""><div class="back-icon"><span class="fonticon fonticon-left-open"></span></div><span class="item-text">Generate Report</span></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c710" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c710"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c710"><span class="item-text">Generate Specifications PRR</span></div></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c711" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c711"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c711"><span class="item-text">Generate Test Methods PRR</span></div></li></ul></div><div class="scroller-scrollbar scroller-scrollbar-x" style="display: none; left: 0px; width: 255.015px;"></div></div><div class="dropdown-menu dropdown-menu-root responsive  scroller scroller-root bottom-right conceal" style="z-index: 26; overflow: hidden; height: 183px; width: 264px; right: 217px; top: 3px; display: none;"><div class="no-native-scrollbars  scroller-content"><ul class="dropdown-menu-wrap" tabindex="1"><li class="item item-back" id="itm-a5c669" title=""><div class="back-icon"><span class="fonticon fonticon-left-open"></span></div><span class="item-text">Product Engineering</span></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c705" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c705"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c705"><span class="item-text">Create Product Data...</span></div></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c706" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c706"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c706"><span class="item-text">Create Product Data In XSE...</span></div></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c707" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c707"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c707"><span class="item-text">Edit Product Data In XSE...</span></div></li><li class="item topbar-menu-dd-item" id="14f07a05-b33d-4577-88bd-6035b566a006/c708" title="" name="14f07a05-b33d-4577-88bd-6035b566a006/c708"><div class="item item-template" id="14f07a05-b33d-4577-88bd-6035b566a006/c708"><span class="item-text">Create New Mfg Equivalent...</span></div></li></ul></div><div class="scroller-scrollbar scroller-scrollbar-x" style="display: none; left: 0px; width: 260.015px;"></div></div></div>
