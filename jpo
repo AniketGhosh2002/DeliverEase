@@ -1,12 +1,19 @@
-WebElement stageDropdown = driver.findElement(By.id("StageId"));
-            Select stageSelect = new Select(stageDropdown);
-            stageSelect.selectByVisibleText("Development");
+whenever I changed the input value a popup open just below this input box so i need to click it to confirm my input value 
 
-            // Enter Title
-            WebElement titleInput = driver.findElement(By.id("TitleId"));
-            titleInput.sendKeys("Automation Test");
+<td valign="middle" class="createInputField" colspan="0"><input value="Raw Material" id="" name="TypeActualDisplay" type="text" fieldlabel="Type" title="Type" size="20"><input value="Packaging Component" name="TypeActual" type="hidden"><input value="" name="TypeActualOID" type="hidden"><input onclick="javascript:showChooser('../common/emxTypeChooser.jsp?SelectType=single&amp;SelectAbstractTypes=false&amp;InclusionList=type_ConsumerSpecification,type_PharmaSpecification&amp;ReloadOpener=true&amp;fieldNameActual=TypeActual&amp;fieldNameDisplay=TypeActualDisplay&amp;fieldNameOID=TypeActualOID&amp;suiteKey=CPN','600','600','true','','TypeActual')" value="..." name="btnTypeActual" type="button"><a href="javascript:basicClear('TypeActual')">Clear</a><script language="JavaScript">
+                                                 myValidationRoutines1.push(['assignValidateMethod', 'TypeActual', 'validateSpecTypesForRestrictedCSDynamic']);
+                                          </script><script language="JavaScript">
+                                          myValidationRoutines.push(['validateRequiredField', 'TypeActual']);
+                                   </script></td>
 
-            // Select "Can" from Template
-            WebElement templateDropdown = driver.findElement(By.id("TemplateId"));
-            Select templateSelect = new Select(templateDropdown);
-            templateSelect.selectByVisibleText("Can");
+
+this is my code for now 
+
+display_input = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.NAME, "TypeActualDisplay"))
+)
+display_input.clear()
+display_input.send_keys("Packaging Component")
+display_input.send_keys(Keys.RETURN)
+hidden_input = driver.find_element(By.NAME, "TypeActual")
+driver.execute_script("arguments[0].value = arguments[1];", hidden_input, "Packaging Component")
