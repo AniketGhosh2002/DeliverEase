@@ -1,1 +1,1 @@
-<div class="wux-controls-abstract wux-controls-toggle wux-controls-checkbox wux-datagridview-selection-checkbox" tabindex="0"><div class="wux-ui-fa wux-icon" tabindex="-1"></div></div>
+<a class="button" onclick="saveCreateChanges(false,'popup')" href="javascript:void(0)"><button type="button" class="btn-primary">OK</button></a>
