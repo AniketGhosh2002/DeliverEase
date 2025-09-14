@@ -1,1 +1,15 @@
-<div class="predicate-content expandable" style="opacity: 1; height: auto; position: relative;"><div class="innerForTransition"><div class="add-tag-cont"><div class="autocomplete"><div class="autocomplete-searchbox" tabindex="1"><input type="text" placeholder="Select a type (optional)" class="autocomplete-input" size="24"></div><div class="autocomplete-suggests" style="height: 200px;"><div class="autocomplete-suggests-scroll  scroller scroller-root" style="overflow: hidden; height: 200px;"><div class="no-native-scrollbars  scroller-content" style="right: -2px; bottom: -2px;"><ul tabindex="1"><li class="autocomplete-item default-template js-selected" id="autocomplete-item-2c7e9a"><span class="item-label" title="">Business Unit</span></li><li class="autocomplete-item default-template" id="autocomplete-item-61727a"><span class="item-label" title="">Company</span></li><li class="autocomplete-item default-template" id="autocomplete-item-1f278c"><span class="item-label" title="">Department</span></li><li class="autocomplete-item default-template" id="autocomplete-item-639f7a"><span class="item-label" title="">Organization</span></li><li class="autocomplete-item default-template" id="autocomplete-item-92de55"><span class="item-label" title="">Plant</span></li></ul></div><div class="scroller-scrollbar scroller-scrollbar-x"></div><div class="scroller-scrollbar scroller-scrollbar-y"></div></div></div></div><span class="add-tag-close"><span class="fonticon fonticon-cancel-circled"></span></span></div></div></div>
+auto_input = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "input.autocomplete-input"))
+)
+auto_input.clear()
+auto_input.send_keys("Business Unit")
+
+# Step 2: Wait for suggestion list to appear
+suggestion = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.XPATH, "//li[contains(@class,'autocomplete-item')]//span[text()='Business Unit']"))
+)
+
+# Step 3: Click the suggestion
+suggestion.click()
+
+print("'Business Unit' selected successfully.")
