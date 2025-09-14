@@ -1,19 +1,25 @@
-now i wanted to select Development from the dropdown
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
 
-<tr id="calc_Stage"><td valign="middle" width="150" class="createLabelRequired"><label for="Stage">Stage</label></td><td valign="middle" class="createInputField" colspan="0"><table class=""><tbody><tr><td><select name="Stage" id="StageId" onchange="" title="Stage" style=""><option value="Select Stage">Select Stage</option><option value="Development">Development</option><option value="Commercial">Commercial</option></select></td></tr></tbody></table><script language="JavaScript">
-                                          myValidationRoutines.push(['validateRequiredField', 'Stage']);
-                                   </script></td></tr>
-								   
-then I wanted to give Title input as "Automation Test"						   
-								   
-								   
-<tr id="calc_Title"><td valign="middle" width="150" class="createLabelRequired"><label for="Title">Title</label></td><td valign="middle" class="createInputField" colspan="0"><table class="textarea"><tbody><tr><td><textarea cols="25" rows="5" name="Title" id="TitleId" fieldlabel="Title" title="Title"></textarea></td></tr></tbody></table><script language="JavaScript">
-                                          myValidationRoutines.push(['validateRequiredField', 'Title']);
-                                   </script></td></tr>
+# --- Select Stage = Development ---
+stage_dropdown = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "StageId"))
+)
+Select(stage_dropdown).select_by_visible_text("Development")
+print("✅ Selected Stage: Development")
 
-then I wanted to select a Template (for now select Can) from the dropdown 
+# --- Enter Title = Automation Test ---
+title_input = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "TitleId"))
+)
+title_input.clear()
+title_input.send_keys("Automation Test")
+print("✅ Entered Title: Automation Test")
 
-
-<tr id="calc_Template"><td valign="middle" width="150" class="createLabelRequired"><label for="Template">Template</label></td><td valign="middle" class="createInputField" colspan="0"><table class=""><tbody><tr><td><select name="Template" id="TemplateId" onchange="" title="Template" style=""><option value="" title="Aerosol Valves"></option><option value="59712.34061.23578.10446" title="Bottles/ Jars">Aerosol Valves</option><option value="59712.34061.32004.11117" title="Can">Bottles/ Jars</option><option value="59712.34061.8557.27031" title="Closure">Can</option><option value="59712.34061.9478.5726" title="Corrugated / Shipper">Closure</option><option value="59712.34061.15968.2606" title="Film / Laminates / Pouch and Bag">Corrugated / Shipper</option><option value="59712.34061.58752.26191" title="Folding Cartons">Film / Laminates / Pouch and Bag</option><option value="59712.34061.40873.28000" title="Generic PC - Other / General">Folding Cartons</option><option value="59712.34061.49679.26206" title="Labels / Leaflets / Booklets">Generic PC - Other / General</option><option value="59712.34061.30207.5130" title="Plastic/ Laminate / Metal Tube">Labels / Leaflets / Booklets</option><option value="59712.34061.33227.31849" title="Pump / Dispenser">Plastic/ Laminate / Metal Tube</option><option value="59712.34061.35058.8549">Pump / Dispenser</option></select></td></tr></tbody></table><script language="JavaScript">
-                                          myValidationRoutines.push(['validateRequiredField', 'Template']);
-                                   </script></td></tr>
+# --- Select Template = Can ---
+template_dropdown = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "TemplateId"))
+)
+Select(template_dropdown).select_by_visible_text("Can")
+print("✅ Selected Template: Can")
