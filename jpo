@@ -1,18 +1,4 @@
-def type_text(by, value, text, description=""):
-    elem = WebDriverWait(driver, 15).until(
-        EC.element_to_be_clickable((by, value))
-    )
-    elem.clear()
-    elem.send_keys(text)
-    if description != "Password" :
-        print(f"Entered {description}: {text}")
-    return elem
-
-def select_dropdown(by, value, option_text, description="", wait=10, sleep_time=5):
-    dropdown = WebDriverWait(driver, wait).until(
-        EC.presence_of_element_located((by, value))
-    )
-    select = Select(dropdown)
-    select.select_by_visible_text(option_text)
-    print(f"Selected '{option_text}' from the {description} dropdown")
-    time.sleep(sleep_time)
+<tr id="calc_">
+                    <!-- //XSSOK -->
+					<td class="heading1" width="" colspan="2"><label style="color:maroon;text-align:left;font-weight:bold"><i>Sub Components</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><a onclick="window.open('../common/emxIndentedTable.jsp?program=emxCPNCharacteristicList:getMicroChar&amp;customize=false&amp;expandProgram=emxCPNCharacteristicList:expandCharacteristicStructure&amp;toolbar=CPNCharacteristicViewToolbar&amp;suiteKey=CPN&amp;insertNewRow=true&amp;editRelationship=relationship_SharedCharacteristic&amp;connectionProgram=emxCPNCharacteristicList:connectSharedTableCharacteristic&amp;showClipboard=false&amp;selection=multiple&amp;freezePane=SequenceNumber,TestMethod&amp;objectId=59712.34061.51355.33612&amp;sortColumnName=none&amp;header=PC-0025897 rev 1: Sub Components&amp;selectedTable=kenvue_PCComponentCharacteristic&amp;CPNCharacteristicDisplayCustomFilter=kenvue_PCComponentCharacteristic&amp;autoFilter=false&amp;postProcessJPO=emxCPNProductData:linkTestMethodsToSpec&amp;mode=edit&amp;jnjMode=editTablePopup&amp;fromTable=true','popUp', 'resizable=yes' )"><img src="../common/images/customEdit.gif" title="Edit"></a><script language="javascript">debugger;var divParent = document.getElementById("customDiv1758048971324").parentElement;divParent.className="heading1";divParent.setAttribute("colSpan", "2");var labelNodes = divParent.parentElement.childNodes;var flag = 0;var labelNode;for(i = 0; i < labelNodes.length; i++){labelNode = labelNodes[i];var labelNodeClass = labelNodes[i].className;if(labelNodeClass == "label") {flag = 1;break;}}if(flag == 1) {var parentNode = labelNode.parentElement;parentNode.removeChild(labelNode);}divParent.removeChild(document.getElementById("customDiv1758048971324"));</script>&nbsp;</td>
+                </tr>
