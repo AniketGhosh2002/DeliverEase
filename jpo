@@ -1,5 +1,1 @@
-edit_icon = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.CSS_SELECTOR, "#GLSEditSpecViewAttributeValue img"))
-)
-edit_icon.click()
-print("Clicked Edit icon")
+<a href="javascript:showNonModalDialog('../common/emxForm.jsp?form=TemplatePreviewForm&amp;mode=edit&amp;HelpMarker=emxhelpparteditdetails&amp;submitAction=refreshCaller&amp;preProcessJavaScript=editImpactedSite;regClassChecks&amp;formFieldsOnly=true&amp;suiteKey=CPN&amp;objectId=59712.34061.51355.33612&amp;parentOID=59712.34061.51355.33612', '930', '650', 'true')" title="Edit Attributes"><img src="../common/images/iconActionEdit.png" width="23px" height="23px" alt="Edit Attributes" title="Edit Attributes"></a>
