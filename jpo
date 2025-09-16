@@ -1,1 +1,26 @@
-<td title="Insert new row" class="icon-button-16x16 combo-button"><img src="../common/images/iconActionCreateObject.gif"></td>
+<table id="bodyTable" width="933">
+<tbody><tr class="mx_hidden-row">
+<td id="ROW_2" width="117"></td>
+<td id="ROW_3" width="82"></td>
+<td id="ROW_4" width="135"></td>
+<td id="ROW_5" width="82"></td>
+<td id="ROW_6" width="82"></td>
+<td id="ROW_7" width="82"></td>
+<td id="ROW_8" width="189"></td>
+<td id="ROW_9" width="82"></td>
+<td id="ROW_10" width="82"></td>
+</tr>
+<tr id=",1758050813366" o="" r="" height="33" class="root-node 
+					even
+				">
+<td position="2" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Tape - Spool - Female<span class="original-value"></span></td>
+<td position="3" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Ceramic<span class="original-value"></span></td>
+<td position="4" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="5" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+<td position="6" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+<td position="7" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+<td position="8" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="9" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+<td position="10" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+</tr>
+</tbody></table>
