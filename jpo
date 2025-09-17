@@ -1,4 +1,143 @@
-<table id="bodyTable" width="933">
+<form name="emxTableForm">
+        	<div class="pageHead" id="pageHeadDiv"><table id="contentHeader"><tbody><tr><td class="page-title"><h2 title="PC-0025897 rev 1: Sub Components">PC-0025897 rev 1: Sub Components</h2><h3 id="pageSubHeader" title=" "> </h3></td><td class="functions"><table id="functionstable"><tbody><tr><td class="progress-indicator"><div id="imgLoadingProgressDivPortal" class="progress-indicator-text"><p id="loading1">Loading....</p></div><div id="imgProgressDivPortal"><div id="count"></div></div></td></tr></tbody></table></td></tr></tbody></table><div class="toolbar-container" id="divToolbarContainer"><div id="imgLoadingProgressDiv" class="progress-indicator-text-sm" style="visibility: hidden;">Loading....</div><div id="divToolbar" class="toolbar-frame"><div class="toolbar"><table><tbody><tr><td itemid="emx543575003167.868" id="CPNProductDataViewDeleteCharacteristic" title="Remove" nowrap="" class="icon-button button-disabled button-disabled button-disabled button-disabled button-disabled button-disabled button-disabled"><img data-type="command" src="../common/images/iconActionDelete.png"></td><td itemid="emx541701773456.7295" id="CPNCharacteristicViewEditAll" title="View All" nowrap="" class="icon-button"><img data-type="command" src="../common/images/iconActionDisableEdit.png"></td><td title="Insert new row" class="icon-button-16x16 combo-button"><img src="../common/images/iconActionCreateObject.gif"></td><td title="Insert new row" class="menu-arrow"><img data-type="combination" src="../common/images/utilMenuArrow.gif" border="0"></td><td itemid="emx1709245288097.7285" title="Remove inserted row(s)" nowrap="" class="icon-button button-disabled button-disabled button-disabled button-disabled button-disabled button-disabled button-disabled"><img data-type="command" src="../common/images/iconActionRemove.png"></td><td itemid="emx127556194952.54376"><div class="separator"></div></td><td itemid="emx891475666798.6984" title="Expand All" nowrap="" class="icon-button button-disabled button-disabled button-disabled"><img data-type="command" src="../common/images/iconActionExpandAll.png"></td><td itemid="emx375050692337.0875" title="Expand n levels" nowrap="" class="icon-button menu-button button-disabled button-disabled button-disabled"><img src="../common/images/iconActionSetNodeExpansionLevel.png"><img src="../common/images/utilMenuArrow.gif"></td></tr></tbody></table></div><div class="toolbar"><table><tbody><tr><td itemid="emx193570616673.22336" id="displayModeMenu" title="DisplayMode" nowrap="" class="icon-button menu-button button-disabled"><img src="../common/images/iconActionChangeTableView.png"><img src="../common/images/utilMenuArrow.gif"></td><td itemid="emx1076313904614.5214" title="Wrap" nowrap="" class="icon-button"><img data-type="command" src="../common/images/iconActionWordWrapOn.png"></td><td itemid="emx5831445613.941233" title="Page URL" nowrap="" class="icon-button"><img data-type="command" src="../common/images/iconActionPageURL.png"></td><td itemid="emx563511437482.8706" title="Row Grouping" nowrap="" class="icon-button"><img data-type="command" src="../common/images/iconActionGroupBy.png"></td><td itemid="emx406592744335.3744" title="Tools" nowrap="" class="icon-button menu-button"><img src="../common/images/iconSmallAdministration.png"><img src="../common/images/utilMenuArrow.gif"></td></tr></tbody></table></div><div class="find-in-wrapper" style="display: inline;"><div class="toolbar find-in-controls"><div class="find-in-string"><input type="text" id="findInStr" class="form-control" placeholder="Find..."></div><div id="findInRslt" class="find-in-results"></div><div class="find-in-cancel"><button type="button" class="cancel"></button></div><div class="btn-grp"><button type="button" id="findInPrev" class="btn btn-default find-in-previous"></button><button type="button" id="findInNext" class="btn btn-default find-in-next"></button></div></div><div class="toolbar find-in-button"><table><tbody><tr><td title="Find..." class="icon-button"><img src="images/iconActionFindInStructure.png"></td></tr></tbody></table></div></div></div></div><div class="toolbar-subcontainer" id="mx_divFilters" style="display:none"><div><div class="toolbar"><table><tbody><tr><td class="label">Group By</td><td class="input" nowrap="nowrap"><select name="rowGouping1" id="rowGouping1" style="width:150px"><option value=""></option><option value="SequenceNumber">Sr.No.</option><option value="PC Component Type">Sub Component</option><option value="PC Family">Family</option><option value="PC Weight">Weight/Grammage</option><option value="PC Min">Min</option><option value="PC Max">Max</option><option value="PC UOM">Unit</option><option value="Manufacturing Process">Manufacturing Process</option><option value="Color">Color</option><option value="JnJ Opacity">Opacity</option></select></td><td class="label">Then By</td><td class="input" nowrap="nowrap"><select name="rowGouping2" id="rowGouping2" style="width:150px"><option value=""></option><option value="SequenceNumber">Sr.No.</option><option value="PC Component Type">Sub Component</option><option value="PC Family">Family</option><option value="PC Weight">Weight/Grammage</option><option value="PC Min">Min</option><option value="PC Max">Max</option><option value="PC UOM">Unit</option><option value="Manufacturing Process">Manufacturing Process</option><option value="Color">Color</option><option value="JnJ Opacity">Opacity</option></select></td><td class="label">Finally By</td><td class="input" nowrap="nowrap"><select name="rowGouping3" id="rowGouping3" style="width:150px"><option value=""></option><option value="SequenceNumber">Sr.No.</option><option value="PC Component Type">Sub Component</option><option value="PC Family">Family</option><option value="PC Weight">Weight/Grammage</option><option value="PC Min">Min</option><option value="PC Max">Max</option><option value="PC UOM">Unit</option><option value="Manufacturing Process">Manufacturing Process</option><option value="Color">Color</option><option value="JnJ Opacity">Opacity</option></select></td></tr></tbody></table></div><div id="mx_divStructureBrowserRGButtons" class="toolbar functions"><table><tbody><tr><td><input id="ApplyButton" type="button" class="mx_btn-apply" value="Apply" onclick="javascript:processRowGroupingToolbarCommand('apply')"><input id="ResetButton" type="button" class="mx_btn-reset" value="Cancel" onclick="javascript:processRowGroupingToolbarCommand('reset')"></td></tr></tbody></table></div><div class="close-button" onclick="javascript:processRowGroupingToolbarCommand('open/close')"><img src="images/iconActionClosePanel.png"></div></div></div><div class="toolbar-subcontainer" id="divMassUpdate" style="display: block;"><div class="toolbar-frame">
+<div class="toolbar"><table><tbody><tr>
+<td class="toolbar-panel-label" nowrap="">Mass Update</td>
+<td class="toolbar-panel-input" nowrap=""><select name="columnSelect" onclick="focusTrick()" onchange="massUpdate(this)"><option value=""></option>
+<option value="SequenceNumber">Sr.No.</option>
+<option value="PC Component Type">Sub Component</option>
+<option value="PC Family">Family</option>
+<option value="PC Weight">Weight/Grammage</option>
+<option value="PC Min">Min</option>
+<option value="PC Max">Max</option>
+<option value="Manufacturing Process">Manufacturing Process</option>
+<option value="Color">Color</option>
+<option value="JnJ Opacity">Opacity</option></select></td>
+</tr></tbody></table></div>
+<div id="mx_divStructureBrowserButtons" class="toolbar dialog-actions"><table><tbody><tr><td>
+<input id="ApplyButton" type="button" value="Save" onclick="applyEdits()" class="mx_btn-apply" title=""><input id="ResetButton" type="button" value="Cancel" onclick="resetEdits()" class="mx_btn-reset" title=""><input id="CloseButton" type="button" value="Submit" onclick="closeWindow()" class="mx_btn-reset" title="Submit">
+</td></tr></tbody></table></div>
+</div></div></div> 		 								
+ 		   	<div id="mx_divBody" style="display: block; top: 118px; bottom: 31px;" class="mx_editable">
+		 		<div id="spinner_div" class="spinner-mask">		 
+				  <div class="spinner spinning fade in">
+					<span class="spinner-bar"></span>
+					<span class="spinner-bar spinner-bar1"></span>
+					<span class="spinner-bar spinner-bar2"></span>
+					<span class="spinner-bar spinner-bar3"></span>
+				  </div>
+				</div>
+ 		   	<div id="mx_divTree" style="width: 129px;"><div id="mx_divTreeHead" style="width: 145px;"><table width="148" id="treeHeadTable" colorize="" style="position: relative; left: 0px;">
+<tbody><tr class="mx_hidden-row">
+<td width="1" position="-1"></td>
+<td width="1" class="mx_hidden-row"></td>
+<td id="ROW_1" class="mx_hidden-row" width="144"></td>
+<td width="2" class="mx_hidden-row"></td>
+</tr>
+<tr style="height: 40px;">
+<th width="1" position="-1"></th>
+<th width="1"></th>
+<th id="SequenceNumber" width="144" class="mx_editable"><table><tbody><tr>
+<td height="25"><input type="checkbox" class="small" name="chkList" onclick="setCheckboxStatus(this)"></td>
+<td id="SequenceNumber" width="110" class="mx_editable mx_sort-column "><a href="javascript:sortTable(1)">Sr.No.</a></td>
+<td id="SequenceNumber_sort" width="0" class=""></td>
+<td id="SequenceNumber_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+</tr>
+</tbody></table></div><div id="mx_divTreeBody" width="147" style="width: 145px; top: 46px;"><table id="treeBodyTable" width="145">
+<tbody><tr class="mx_hidden-row">
+<td width="1" position="-1"></td>
+<td id="ROW_1" width="144"></td>
+</tr>
+<tr id=",1758134173163" o="" r="" height="33" class="root-node even">
+<td class="" position="-1"></td>
+<td position="1" rownumber="1" rmbid="" rmbrow=",1758134173163" class="mx_editable "><div id=",1758134173163" o="" r="" t=""><table><tbody><tr id=",1758134173163" o="" r="">
+<td width="13"><a href="javascript:toggle(',1758134173163')"><img id="img_,1758134173163" src="images/utilTreeLineNodeClosedSBDisabled.gif" alt="" border="0" align="top"></a></td>
+<td><input type="checkbox" name="emxTableRowIdActual" class="small" id="rmbrow-,1758134173163" value="|||,1758134173163" onclick="doFreezePaneCheckboxClick(this, event); doCheckSelectAll();"></td>
+<td id="icon_,1758134173163">
+<img src="images/iconActionCreate.gif" height="16" align="middle">&nbsp;
+								</td>
+<td title="0" position="1" valign="middle" rmbid="" rmbrow=",1758134173163" class="mx_editable  ">0</td>
+</tr></tbody></table></div></td>
+</tr>
+</tbody></table></div></div><div id="spinner_div" class="spinner-mask"><div class="spinner spinning fade in"><span class="spinner-bar"></span><span class="spinner-bar spinner-bar1"></span><span class="spinner-bar spinner-bar2"></span><span class="spinner-bar spinner-bar3"></span></div></div><div id="mx_divGrabber" onmousedown="javascript:setDragging(this)" onmouseup="javascript:stopResizeDivs(this)" style="left: 129px;"><div id="mx_divGrabberHead"></div><div id="mx_divGrabberBody" style="top: 6px;"></div></div><div id="mx_divTable" style="left: 132px;"><div id="mx_divTableHead"><table width="933" border="0" id="headTable" style="position: relative; left: 0px;">
+<tbody><tr class="mx_hidden-row">
+<td id="ROW_2" width="115"></td>
+<td width="2"></td>
+<td id="ROW_3" width="80"></td>
+<td width="2"></td>
+<td id="ROW_4" width="133"></td>
+<td width="2"></td>
+<td id="ROW_5" width="80"></td>
+<td width="2"></td>
+<td id="ROW_6" width="80"></td>
+<td width="2"></td>
+<td id="ROW_7" width="80"></td>
+<td width="2"></td>
+<td id="ROW_8" width="187"></td>
+<td width="2"></td>
+<td id="ROW_9" width="80"></td>
+<td width="2"></td>
+<td id="ROW_10" width="80"></td>
+<td width="2"></td>
+</tr>
+<tr>
+<th id="PC Component Type" class="mx_editable mx_required"><table><tbody><tr>
+<td id="PC Component Type" width="117" class="mx_editable mx_sort-column "><a href="javascript:sortTable(2)">Sub Component</a></td>
+<td id="PC Component Type_sort" width="0" class=""></td>
+<td id="PC Component Type_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="PC Family" class="mx_editable mx_required"><table><tbody><tr>
+<td id="PC Family" width="74" class="mx_editable mx_sort-column "><a href="javascript:sortTable(3)">Family</a></td>
+<td id="PC Family_sort" width="0" class=""></td>
+<td id="PC Family_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="PC Weight" class="mx_editable mx_required"><table><tbody><tr>
+<td id="PC Weight" width="135" class="mx_editable mx_sort-column "><a href="javascript:sortTable(4)">Weight/Grammage</a></td>
+<td id="PC Weight_sort" width="0" class=""></td>
+<td id="PC Weight_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="PC Min" class="mx_editable  "><table><tbody><tr>
+<td id="PC Min" width="74" class="mx_editable mx_sort-column "><a href="javascript:sortTable(5)">Min</a></td>
+<td id="PC Min_sort" width="0" class=""></td>
+<td id="PC Min_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="PC Max" class="mx_editable "><table><tbody><tr>
+<td id="PC Max" width="74" class="mx_editable mx_sort-column "><a href="javascript:sortTable(6)">Max</a></td>
+<td id="PC Max_sort" width="0" class=""></td>
+<td id="PC Max_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="PC UOM"><table><tbody><tr>
+<td id="PC UOM" width="74" class="mx_sort-column "><a href="javascript:sortTable(7)">Unit</a></td>
+<td id="PC UOM_sort" width="0" class=""></td>
+<td id="PC UOM_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="Manufacturing Process" class="mx_editable mx_required"><table><tbody><tr>
+<td id="Manufacturing Process" width="189" class="mx_editable mx_sort-column "><a href="javascript:sortTable(8)">Manufacturing Process</a></td>
+<td id="Manufacturing Process_sort" width="0" class=""></td>
+<td id="Manufacturing Process_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="Color" class="mx_editable "><table><tbody><tr>
+<td id="Color" width="74" class="mx_editable mx_sort-column "><a href="javascript:sortTable(9)">Color</a></td>
+<td id="Color_sort" width="0" class=""></td>
+<td id="Color_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+<th id="JnJ Opacity" class="mx_editable "><table><tbody><tr>
+<td id="JnJ Opacity" width="74" class="mx_editable mx_sort-column "><a href="javascript:sortTable(10)">Opacity</a></td>
+<td id="JnJ Opacity_sort" width="0" class=""></td>
+<td id="JnJ Opacity_filter" width="0"></td>
+</tr></tbody></table></th>
+<th class="mx_sizer"></th>
+</tr>
+</tbody></table></div><div id="mx_divTableBody" style="top: 46px;"><table id="bodyTable" width="933">
 <tbody><tr class="mx_hidden-row">
 <td id="ROW_2" width="117"></td>
 <td id="ROW_3" width="82"></td>
@@ -10,17 +149,27 @@
 <td id="ROW_9" width="82"></td>
 <td id="ROW_10" width="82"></td>
 </tr>
-<tr id=",1758050813366" o="" r="" height="33" class="root-node 
+<tr id=",1758134173163" o="" r="" height="33" class="root-node 
 					even
 				">
-<td position="2" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Tape - Spool - Female<span class="original-value"></span></td>
-<td position="3" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Ceramic<span class="original-value"></span></td>
-<td position="4" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required  "></td>
-<td position="5" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
-<td position="6" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
-<td position="7" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
-<td position="8" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required  "></td>
-<td position="9" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
-<td position="10" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable  "></td>
+<td position="2" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="3" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="4" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="5" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable  "></td>
+<td position="6" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable  "></td>
+<td position="7" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable  "></td>
+<td position="8" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable mx_required  "></td>
+<td position="9" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable  "></td>
+<td position="10" rmbid="" rmbrow=",1758134173163" rownumber="1" class="mx_editable  "></td>
 </tr>
-</tbody></table>
+</tbody></table><div id="tempDivForDropImage" class="dropProgressColumn" style="display: none;"></div></div></div></div>
+ 		   	<div id="mx_divThumbnailBody" style="display: none; top: 118px;"></div>
+          	<div id="mx_divTreeGraphBody" style="display: none; top: 118px;"></div>
+          	<input type="hidden" name="rowIds">
+          	<input type="hidden" name="groupData">
+          	<input type="hidden" name="groupRowIndex">
+          	<input type="hidden" name="bGroupingRows">
+          	<input type="hidden" name="csvData">
+          	<input type="hidden" name="postDataXML">
+          	<input type="hidden" name="timeStamp" value="1757675784990">
+        <div id="divPageFoot"><table><tbody><tr><td class="functions textRight"><div id="mx_objectCount" class="object-count">1 object</div></td></tr></tbody></table></div><div id="divPostData"><input type="hidden" name="IsStructureCompare" id="IsStructureCompare" value="FALSE"><input type="hidden" name="hideToolbar" id="hideToolbar" value="false"><input type="hidden" name="User-Agent" id="User-Agent" value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"><input type="hidden" name="program" id="program" value="emxCPNCharacteristicList:getMicroChar"><input type="hidden" name="localeObj" id="localeObj" value="en_US"><input type="hidden" name="type" id="type" value="*"><input type="hidden" name="mode" id="mode" value="edit"><input type="hidden" name="split" id="split" value="1"><input type="hidden" name="ImageData" id="ImageData" value="https://truqa.kenvue.com/3dspace"><input type="hidden" name="HasMergedCell" id="HasMergedCell" value="false"><input type="hidden" name="connectionProgram" id="connectionProgram" value="emxCPNCharacteristicList:connectSharedTableCharacteristic"><input type="hidden" name="charSet" id="charSet" value="UTF-8"><input type="hidden" name="fullTextSearch" id="fullTextSearch" value="false"><input type="hidden" name="RootLabel" id="RootLabel" value=""><input type="hidden" name="hideHeader" id="hideHeader" value="false"><input type="hidden" name="displayView" id="displayView" value="details,thumbnails,tree"><input type="hidden" name="timeZone" id="timeZone" value="-5.5"><input type="hidden" name="editRelationship" id="editRelationship" value="relationship_SharedCharacteristic"><input type="hidden" name="customSubHeader" id="customSubHeader" value=""><input type="hidden" name="insertNewRow" id="insertNewRow" value="true"><input type="hidden" name="portalMode" id="portalMode" value="false"><input type="hidden" name="selection" id="selection" value="multiple"><input type="hidden" name="spellCheckerURL" id="spellCheckerURL" value=""><input type="hidden" name="showTableCalcOptions" id="showTableCalcOptions" value="false"><input type="hidden" name="sortColumnName" id="sortColumnName" value="none"><input type="hidden" name="expandFilter" id="expandFilter" value="true"><input type="hidden" name="customize" id="customize" value="false"><input type="hidden" name="languageStr" id="languageStr" value="en-US,en;q=0.9"><input type="hidden" name="isIndentedView" id="isIndentedView" value="true"><input type="hidden" name="freezePane" id="freezePane" value="SequenceNumber,TestMethod"><input type="hidden" name="Edit Mode" id="Edit Mode" value="EDIT"><input type="hidden" name="massUpdateTCL" id="massUpdateTCL" value=""><input type="hidden" name="suiteKey" id="suiteKey" value="CPN"><input type="hidden" name="userTable" id="userTable" value="false"><input type="hidden" name="relationship" id="relationship" value="*"><input type="hidden" name="objectId" id="objectId" value="59712.34061.51355.33612"><input type="hidden" name="fromCtxSearch" id="fromCtxSearch" value="false"><input type="hidden" name="autoFilter" id="autoFilter" value="false"><input type="hidden" name="CPNCharacteristicDisplayCustomFilter" id="CPNCharacteristicDisplayCustomFilter" value="kenvue_PCComponentCharacteristic"><input type="hidden" name="dynamicFreezePane" id="dynamicFreezePane" value="SequenceNumber,TestMethod"><input type="hidden" name="jnjMode" id="jnjMode" value="editTablePopup"><input type="hidden" name="fromTable" id="fromTable" value="true"><input type="hidden" name="toolbar" id="toolbar" value="CPNCharacteristicViewToolbar"><input type="hidden" name="cellwrap" id="cellwrap" value="false"><input type="hidden" name="expandProgram" id="expandProgram" value="emxCPNCharacteristicList:expandCharacteristicStructure"><input type="hidden" name="submitMethod" id="submitMethod" value="GET"><input type="hidden" name="uiType" id="uiType" value="structureBrowser"><input type="hidden" name="spellCheckerLang" id="spellCheckerLang" value="en_US"><input type="hidden" name="showClipboard" id="showClipboard" value="false"><input type="hidden" name="postProcessJPO" id="postProcessJPO" value="emxCPNProductData:linkTestMethodsToSpec"></div></form>
