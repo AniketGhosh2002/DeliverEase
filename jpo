@@ -1,2 +1,17 @@
-<td position="2" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Tape - Spool - Female<span class="original-value"></span></td>
-<td position="3" rmbid="" rmbrow=",1758050813366" rownumber="1" class="mx_editable mx_required   mx_edited" title="">Ceramic<span class="original-value"></span></td>
+first i select PC Family from this dropdown 
+
+<td class="toolbar-panel-input" nowrap=""><select name="columnSelect" onclick="focusTrick()" onchange="massUpdate(this)"><option value=""></option>
+<option value="SequenceNumber">Sr.No.</option>
+<option value="PC Component Type">Sub Component</option>
+<option value="PC Family">Family</option>
+<option value="PC Weight">Weight/Grammage</option>
+<option value="PC Min">Min</option>
+<option value="PC Max">Max</option>
+<option value="Manufacturing Process">Manufacturing Process</option>
+<option value="Color">Color</option>
+<option value="JnJ Opacity">Opacity</option></select></td>
+
+
+then I swictched to iframe id listHidden then go the options and select Fiber
+
+<form name="emxTableForm_2"><select name="formfield1758140662706"><option value="Adhesive">Adhesive</option><option value="Ceramic">Ceramic</option><option value="Fiber">Fiber</option><option value="Glass">Glass</option><option value="Laminate">Laminate</option><option value="Metal">Metal</option><option value="Paper">Paper</option><option value="Plant">Plant</option><option value="Plastic - Flexible">Plastic - Flexible</option><option value="Plastic - Rigid">Plastic - Rigid</option><option value="Rubber">Rubber</option></select><input type="hidden"></form>
