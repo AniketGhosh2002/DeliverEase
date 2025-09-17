@@ -1,5 +1,5 @@
-first i select PC Family from this dropdown 
-
+<div class="toolbar"><table><tbody><tr>
+<td class="toolbar-panel-label" nowrap="">Mass Update</td>
 <td class="toolbar-panel-input" nowrap=""><select name="columnSelect" onclick="focusTrick()" onchange="massUpdate(this)"><option value=""></option>
 <option value="SequenceNumber">Sr.No.</option>
 <option value="PC Component Type">Sub Component</option>
@@ -10,8 +10,4 @@ first i select PC Family from this dropdown
 <option value="Manufacturing Process">Manufacturing Process</option>
 <option value="Color">Color</option>
 <option value="JnJ Opacity">Opacity</option></select></td>
-
-
-then I swictched to iframe id listHidden then go the options and select Fiber
-
-<form name="emxTableForm_2"><select name="formfield1758140662706"><option value="Adhesive">Adhesive</option><option value="Ceramic">Ceramic</option><option value="Fiber">Fiber</option><option value="Glass">Glass</option><option value="Laminate">Laminate</option><option value="Metal">Metal</option><option value="Paper">Paper</option><option value="Plant">Plant</option><option value="Plastic - Flexible">Plastic - Flexible</option><option value="Plastic - Rigid">Plastic - Rigid</option><option value="Rubber">Rubber</option></select><input type="hidden"></form>
+</tr></tbody></table></div>
