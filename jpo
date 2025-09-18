@@ -1,13 +1,1 @@
-<div class="toolbar"><table><tbody><tr>
-<td class="toolbar-panel-label" nowrap="">Mass Update</td>
-<td class="toolbar-panel-input" nowrap=""><select name="columnSelect" onclick="focusTrick()" onchange="massUpdate(this)"><option value=""></option>
-<option value="SequenceNumber">Sr.No.</option>
-<option value="PC Component Type">Sub Component</option>
-<option value="PC Family">Family</option>
-<option value="PC Weight">Weight/Grammage</option>
-<option value="PC Min">Min</option>
-<option value="PC Max">Max</option>
-<option value="Manufacturing Process">Manufacturing Process</option>
-<option value="Color">Color</option>
-<option value="JnJ Opacity">Opacity</option></select></td>
-</tr></tbody></table></div>
+<form name="emxTableForm_2"><input type="text" name="formfield1758210974736" massupdate="true" id="typeAheadTextBoxToKeyIn"><input type="hidden" name="formfield1758210974736_Actual"><input type="button" name="btnType" value="..."><input type="button" name="btnClear" value="Clear"></form>
