@@ -1,1 +1,335 @@
-<td class="heading1" width="" colspan="2"><label style="color:maroon;text-align:left;font-weight:bold"><i>Sub Component Composition</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label><a onclick="window.open('../common/emxIndentedTable.jsp?program=emxCPNCharacteristicList:getMicroChar&amp;customize=false&amp;expandProgram=emxCPNCharacteristicList:expandCharacteristicStructure&amp;toolbar=CPNCharacteristicViewToolbar&amp;suiteKey=CPN&amp;insertNewRow=true&amp;editRelationship=relationship_SharedCharacteristic&amp;connectionProgram=emxCPNCharacteristicList:connectSharedTableCharacteristic&amp;showClipboard=false&amp;selection=multiple&amp;freezePane=SequenceNumber,TestMethod&amp;objectId=59712.34061.51355.33612&amp;sortColumnName=none&amp;header=PC-0025897 rev 1: Sub Component Composition&amp;selectedTable=kenvue_PCCompositionCharacteristic&amp;CPNCharacteristicDisplayCustomFilter=kenvue_PCCompositionCharacteristic&amp;autoFilter=false&amp;postProcessJPO=emxCPNProductData:linkTestMethodsToSpec&amp;mode=edit&amp;jnjMode=editTablePopup&amp;fromTable=true','popUp', 'resizable=yes' )"><img src="../common/images/customEdit.gif" title="Edit"></a><script language="javascript">debugger;var divParent = document.getElementById("customDiv1758213438657").parentElement;divParent.className="heading1";divParent.setAttribute("colSpan", "2");var labelNodes = divParent.parentElement.childNodes;var flag = 0;var labelNode;for(i = 0; i < labelNodes.length; i++){labelNode = labelNodes[i];var labelNodeClass = labelNodes[i].className;if(labelNodeClass == "label") {flag = 1;break;}}if(flag == 1) {var parentNode = labelNode.parentElement;parentNode.removeChild(labelNode);}divParent.removeChild(document.getElementById("customDiv1758213438657"));</script>&nbsp;</td>
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from dotenv import load_dotenv
+import os
+import time
+
+load_dotenv()
+
+URL = os.getenv("URL")
+APPLICATIONUSER = os.getenv("APPLICATIONUSER")
+PASSWORD = os.getenv("PASSWORD")
+TYPE = os.getenv("TYPE")
+STAGE = os.getenv("STAGE")
+TITLE = os.getenv("TITLE")
+TEMPLATE = os.getenv("TEMPLATE")
+LANGUAGE = os.getenv("LANGUAGE")
+SITE_TYPE = os.getenv("SITE_TYPE")
+SITE_NAMES = os.getenv("SITE_NAMES").split(",")
+SUPPLIER_NAMES = os.getenv("SUPPLIER_NAMES").split(",")
+
+driver = webdriver.Chrome()
+driver.get(URL)
+actions = ActionChains(driver)
+
+def click_when_ready(by, value, description="", offset=None):
+    elem = WebDriverWait(driver, 15).until(
+        EC.element_to_be_clickable((by, value))
+    )
+    if offset:
+        actions.move_to_element_with_offset(elem, *offset).click().perform()
+    else:
+        actions.move_to_element(elem).click().perform()
+    print(f"Clicked {description}")
+    time.sleep(5)
+    return elem
+
+def type_or_select(action, by, value, input_value, description="", wait=10, sleep_time=5):
+    elem = WebDriverWait(driver, wait).until(
+        EC.element_to_be_clickable((by, value))
+    )
+
+    if action == "type_text":
+        elem.clear()
+        elem.send_keys(input_value)
+        if description.lower() != "password":
+            print(f"Entered {description}: {input_value}")
+
+    elif action == "select_dropdown":
+        select = Select(elem)
+        select.select_by_visible_text(input_value)
+        print(f"Selected '{input_value}' from the {description} dropdown")
+    time.sleep(sleep_time)
+    return elem
+
+
+
+
+
+time.sleep(10)
+type_or_select("type_text", By.NAME, "username", APPLICATIONUSER, "Username")
+pwd = type_or_select("type_text", By.NAME, "password", PASSWORD, "Password")
+pwd.send_keys(Keys.RETURN)
+time.sleep(25)
+
+try:
+    close_button = driver.find_element(By.CSS_SELECTOR, ".ds-coachmark-close.fonticon.fonticon-wrong")
+    actions.move_to_element(close_button).click().perform()
+except NoSuchElementException:
+    print("Popup not found, skipping...")
+time.sleep(10)
+
+main_window = driver.current_window_handle
+
+search_bar = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.XPATH, "//div[@id='input_search_div']//input[@placeholder='Search']"))
+)
+actions.move_to_element(search_bar).click().perform()
+search_bar.send_keys("PC-0025897")
+time.sleep(10)
+search_button = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, ".run_btn_search.fonticon.fonticon-search"))
+)
+actions.move_to_element(search_button).click().perform()
+print("Clicked Search button")
+time.sleep(15)
+select_button = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, ".wux-ui-fa.wux-icon"))
+)
+actions.move_to_element(select_button).click().perform()
+print("Selected Object")
+time.sleep(3)
+obj_dropdown = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, ".fonticon.fonticon-2x.fonticon-down-open"))
+)
+actions.move_to_element(obj_dropdown).click().perform()
+time.sleep(3)
+open_obj = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.ID, "action_DisplayDetails"))
+)
+actions.move_to_element(open_obj).click().perform()
+print("Opened Object")
+time.sleep(15)
+
+
+WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2))
+for handle in driver.window_handles:
+    if handle != main_window:
+        driver.switch_to.window(handle)
+        print("Switched to Object window")
+        break
+object_window = driver.current_window_handle
+
+time.sleep(5)
+
+
+obj_name = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.NAME, "li_type_ProductDataPart"))
+)
+actions.move_to_element(obj_name).click().perform()
+print("Clicked Object Name")
+time.sleep(15)
+
+
+
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "content"))
+)
+print("Switched to iframe 'content'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "detailsDisplay"))
+)
+print("Switched to iframe 'detailsDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "portalDisplay"))
+)
+print("Switched to iframe 'portalDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "CPNProductDataViewAttribute"))
+)
+print("Switched to iframe 'CPNProductDataViewAttribute'")
+time.sleep(5)
+
+edit_attr_link = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "td[title='Edit Details']"))
+)
+actions.move_to_element(edit_attr_link).click().perform()
+print("Clicked Edit Details link inside iframe")
+time.sleep(5)
+
+
+type_or_select("select_dropdown", By.ID, "RegionId", "EMEA", "Region")
+type_or_select("select_dropdown", By.ID, "Type of ComponentId", "Bag", "Type of Component")
+type_or_select("select_dropdown", By.ID, "Category of PackingId", "Primary", "Packing level")
+type_or_select("select_dropdown", By.ID, "Neck Finish TypeId", "Crimp", "Neck Finish Type")
+type_or_select("select_dropdown", By.ID, "Closure TypeId", "Disc Top", "Closure Type")
+type_or_select("select_dropdown", By.ID, "Neck Finish or Closure SizeId", "120 / 400", "Neck Finish/Closure Size")
+type_or_select("select_dropdown", By.ID, "PC Weight or GrammageId", "Weight", "Weight/Grammage")
+type_or_select("select_dropdown", By.ID, "PC UOMId", "g", "Unit")
+type_or_select("type_text", By.ID, "PC Total Weight", 100, "Total Weight")
+type_or_select("select_dropdown", By.ID, "JnJ OpacifiersId", "Carbon Black", "Recylability disrupters")
+click_when_ready(By.XPATH, "//button[text()='Done' and contains(@class,'btn-primary')]", "Done button (edit window)")
+time.sleep(20)
+
+click_when_ready(By.XPATH, "//label[.//i[contains(.,'Sub Components')]]/following::img[@title='Edit'][1]", "Edit button (Sub Component Table)")
+time.sleep(5)
+for handle in driver.window_handles:
+    if handle not in [main_window, object_window]:
+        driver.switch_to.window(handle)
+        print("Switched to table window")
+        break
+table_window = driver.current_window_handle
+time.sleep(10)
+click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button (Sub Component Table)")
+click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked entry in pos 1 (Sub Component Table)")
+click_when_ready(By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "click type in pos 1 (Sub Component Table)")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Sub Component", "Subcomponent")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Tape - Spool - Female", "Subcomponent")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Family", "Family")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Fiber", "Family")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Weight/Grammage", "Weight/Grammage")
+type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "100", "Weight/Grammage")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Manufacturing Process", "Manufacturing Process")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Pulping", "Manufacturing Process")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+click_when_ready(By.XPATH, "//input[@id='ApplyButton' and @value='Save']", "Save button")
+click_when_ready(By.XPATH, "//input[@id='CloseButton' and @value='Submit']", "Submit button")
+time.sleep(5)
+
+WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2))
+driver.switch_to.window(object_window)
+time.sleep(5)
+
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "content"))
+)
+print("Switched to iframe 'content'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "detailsDisplay"))
+)
+print("Switched to iframe 'detailsDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "portalDisplay"))
+)
+print("Switched to iframe 'portalDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "CPNProductDataViewAttribute"))
+)
+print("Switched to iframe 'CPNProductDataViewAttribute'")
+time.sleep(5)
+
+click_when_ready(By.XPATH, "//td[@class='heading1']//i[contains(text(),'Sub Component Composition')]/following::img[@title='Edit']", "Edit button (Sub Component Composition Table)")
+time.sleep(5)
+for handle in driver.window_handles:
+    if handle not in [main_window, object_window]:
+        driver.switch_to.window(handle)
+        print("Switched to table window")
+        break
+time.sleep(10)
+click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
+click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
+click_when_ready(By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Clicked select attribute dropdown")
+
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Sub Component", "Subcomponent")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Tape - Spool - Female", "Subcomponent")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Material", "Material")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Wax", "Material")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Material Type", "Material Type")
+type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Ink", "Material Type")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Composition%", "Composition%")
+type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "100", "Composition%")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Primary Material Reference/Supplier", "Primary Material Reference/Supplier")
+type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "Test", "Primary Material Reference/Supplier")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+click_when_ready(By.XPATH, "//input[@id='ApplyButton' and @value='Save']", "Save button")
+click_when_ready(By.XPATH, "//input[@id='CloseButton' and @value='Submit']", "Submit button")
+time.sleep(5)
+
+WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2))
+driver.switch_to.window(object_window)
+time.sleep(5)
+
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "content"))
+)
+print("Switched to iframe 'content'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "detailsDisplay"))
+)
+print("Switched to iframe 'detailsDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "portalDisplay"))
+)
+print("Switched to iframe 'portalDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "CPNProductDataViewAttribute"))
+)
+print("Switched to iframe 'CPNProductDataViewAttribute'")
+time.sleep(5)
+
+click_when_ready(By.XPATH, "//td[@class='heading1']//i[contains(text(),'Suppliers')]/following::img[@title='Edit']", "Edit button (Supplier Table)")
+time.sleep(5)
+for handle in driver.window_handles:
+    if handle not in [main_window, object_window]:
+        driver.switch_to.window(handle)
+        print("Switched to table window")
+        break
+table_window = driver.current_window_handle
+time.sleep(10)
+click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
+click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
+click_when_ready(By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Clicked select attribute dropdown")
+
+type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "Supplier", "Supplier")
+type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "Test_supplier", "Supplier")
+click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+click_when_ready(By.XPATH, "//input[@id='ApplyButton' and @value='Save']", "Save button")
+click_when_ready(By.XPATH, "//input[@id='CloseButton' and @value='Submit']", "Submit button")
+
+WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2))
+driver.switch_to.window(object_window)
+
+
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "content"))
+)
+print("Switched to iframe 'content'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "detailsDisplay"))
+)
+print("Switched to iframe 'detailsDisplay'")
+time.sleep(2)
+WebDriverWait(driver, 10).until(
+    EC.frame_to_be_available_and_switch_to_it((By.NAME, "portalDisplay"))
+)
+print("Switched to iframe 'portalDisplay'")
+time.sleep(2)
+
+click_when_ready(By.XPATH, "//td[@title='Lifecycle']", "Lifecycle")
+
+time.sleep(20)
+driver.close()
