@@ -1,8 +1,8 @@
-def switch_to_table_window(main_window,object_window):
-    time.sleep(10)
-    for handle in driver.window_handles:
-        if handle not in [main_window, object_window]:
-            driver.switch_to.window(handle)
-            print("Switched to table window")
-            break
-    time.sleep(5)
+def switch_to_recent_window(driver):
+    """
+    Switch Selenium driver to the most recently opened window
+    """
+    time.sleep(3)  # small wait to ensure window loads
+    driver.switch_to.window(driver.window_handles[-1])
+    print("✅ Switched to recent window:", driver.current_window_handle)
+    time.sleep(2)
