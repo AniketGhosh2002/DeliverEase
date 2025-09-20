@@ -1,1 +1,8 @@
-<div class="menu-content" aria-haspopup="true"><ul><li class="icon"><a href="javascript:void(0)"><span><img height="16" width="16" src="../common/images/iconActionCreate.gif"></span><label>Manage Approval Routes...</label></a></li><li class="separator"></li><li class="icon disabled"><a href="javascript:void(0)"><span><img height="16" width="16" src="../common/images/iconActionEscalateTask.png"></span><label>Set Task Escalation</label></a></li><li class="icon disabled"><a href="javascript:void(0)"><span><img height="16" width="16" src="../common/images/iconActionDelete.png"></span><label>Delete...</label></a></li><li class="icon disabled"><a href="javascript:void(0)"><span><img height="16" width="16" src="../common/images/iconActionRemove.png"></span><label>Remove</label></a></li></ul></div>
+def switch_to_table_window(main_window,object_window):
+    time.sleep(10)
+    for handle in driver.window_handles:
+        if handle not in [main_window, object_window]:
+            driver.switch_to.window(handle)
+            print("Switched to table window")
+            break
+    time.sleep(5)
