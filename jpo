@@ -1,4 +1,4 @@
-CLOSURE_TABLES={
+{
   "Sub Components": [
     {"name":"Sub Component","type":"select_dropdown","value":"Tape - Spool - Female"},
     {"name":"Family","type":"select_dropdown","value":"Fiber"},
