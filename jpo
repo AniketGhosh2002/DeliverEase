@@ -1,23 +1,18 @@
-{
-Traceback (most recent call last):
-  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 531, in <module>
-    main()
-  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 500, in main
-    doc = fill_template(object_window,TEMPLATE,doc)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 291, in fill_template
-    tables = get_template_tables(template_name)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 304, in get_template_tables
-    return json.loads(tables_str) if tables_str else {}
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Program Files\Python311\Lib\json\__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Program Files\Python311\Lib\json\decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Program Files\Python311\Lib\json\decoder.py", line 353, in raw_decode
-    obj, end = self.scan_once(s, idx)
-               ^^^^^^^^^^^^^^^^^^^^^^
-json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+CLOSURE_TABLES={
+  "Sub Components": [
+    {"name":"Sub Component","type":"select_dropdown","value":"Tape - Spool - Female"},
+    {"name":"Family","type":"select_dropdown","value":"Fiber"},
+    {"name":"Weight/Grammage","type":"type_text","value":"100"},
+    {"name":"Manufacturing Process","type":"select_dropdown","value":"Pulping"}
+  ],
+  "Sub Component Composition": [
+    {"name":"Sub Component","type":"select_dropdown","value":"Tape - Spool - Female"},
+    {"name":"Material","type":"select_dropdown","value":"Wax"},
+    {"name":"Material Type","type":"select_dropdown","value":"Ink"},
+    {"name":"Composition%","type":"type_text","value":"100"},
+    {"name":"Primary Material Reference/Supplier","type":"type_text","value":"Test"}
+  ],
+  "Suppliers": [
+    {"name":"Supplier","type":"type_text","value":"Test_supplier"}
+  ]
+}
