@@ -1,1 +1,79 @@
-<div class="headerContent" id="divExtendedHeaderName"><span title="PC-0025897" class="extendedHeader name">PC-0025897</span><span title="Automation Test" class="extendedHeader marketing-name">Automation Test</span><span class="extendedHeader">  <img class="typeIcon" src="../common/images/iconSmallPart.png"><span class="extendedHeader type-name" title="Packaging Component (1)">Packaging Component (1)</span></span></div>
+def fill_sub_component_table(object_window):
+    move_to_portal(object_window)
+    
+    click_when_ready(By.XPATH, "//label[.//i[contains(.,'Sub Components')]]/following::img[@title='Edit'][1]", "Edit button (Sub Component Table)")
+    
+    switch_to_window()
+
+    click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button (Sub Component Table)")
+    click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked entry in pos 1 (Sub Component Table)")
+    click_when_ready(By.XPATH, "//select[@name='columnSelect' and @onclick='focusTrick()']", "click type in pos 1 (Sub Component Table)")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Sub Component", "Subcomponent")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Tape - Spool - Female", "Subcomponent")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Family", "Family")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Fiber", "Family")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Weight/Grammage", "Weight/Grammage")
+    type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "100", "Weight/Grammage")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Manufacturing Process", "Manufacturing Process")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Pulping", "Manufacturing Process")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    save_and_submit(object_window)
+
+
+def fill_sub_component_composition_table(object_window):
+    move_to_portal(object_window)
+    
+    click_when_ready(By.XPATH, "//td[@class='heading1']//i[contains(text(),'Sub Component Composition')]/following::img[@title='Edit']", "Edit button (Sub Component Composition Table)")
+    switch_to_window()
+
+    click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
+    click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
+    click_when_ready(By.XPATH, "//select[@name='columnSelect']", "Clicked select attribute dropdown")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Sub Component", "Subcomponent")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Tape - Spool - Female", "Subcomponent")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Material", "Material")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Wax", "Material")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Material Type", "Material Type")
+    type_or_select("select_dropdown",By.XPATH, "//form[@name='emxTableForm_2']//select", "Ink", "Material Type")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Composition%", "Composition%")
+    type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "100", "Composition%")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Primary Material Reference/Supplier", "Primary Material Reference/Supplier")
+    type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "Test", "Primary Material Reference/Supplier")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    save_and_submit(object_window)
+
+
+def fill_suppliers_table(object_window):
+    move_to_portal(object_window)
+    
+    click_when_ready(By.XPATH, "//td[@class='heading1']//i[contains(text(),'Suppliers')]/following::img[@title='Edit']", "Edit button (Supplier Table)")
+    
+    switch_to_window()
+
+    click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
+    click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
+    click_when_ready(By.XPATH, "//select[@name='columnSelect']", "Clicked select attribute dropdown")
+
+    type_or_select("select_dropdown",By.XPATH, "//select[@name='columnSelect']", "Supplier", "Supplier")
+    type_or_select("type_text",By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", "Test_supplier", "Supplier")
+    click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
+
+    save_and_submit(object_window)
