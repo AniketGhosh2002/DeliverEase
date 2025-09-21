@@ -1,11 +1,19 @@
-<tr>
-                    	<!-- //XSSOK -->
-                    	<td><a href="javascript:;" onclick="validateUserCredentials();return false"><img src="images/buttonDialogDone.gif" border="0" alt="Done"></a></td>
-                    	<!-- //XSSOK -->
-                    	<td><a href="javascript:;" onclick="validateUserCredentials();return false" class="button">Done</a></td>
-			            <td>&nbsp;&nbsp;</td>
-          				<!-- //XSSOK -->
-          				<td><div id="cancelImage"><a href="closeWindow();return false"><img src="images/buttonDialogCancel.gif" border="0" alt="Cancel"></a></div></td>
-			            <!-- //XSSOK -->
-						<td><div id="cancelText"><a onclick="closeWindow();return false" class="button">Cancel</a></div></td>
-          			 </tr>
+def click_when_ready(by, value, description="", offset=None, wait=30):
+    elem = WebDriverWait(driver, wait).until(EC.element_to_be_clickable((by, value)))
+    if offset:
+        actions.move_to_element_with_offset(elem, *offset).click().perform()
+    else:
+        actions.move_to_element(elem).click().perform()
+    print(f"✅ Clicked {description}")
+    time.sleep(5)
+    return elem
+
+
+
+
+how can i call for this 
+product_type = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.NAME, "TypeActualDisplay"))
+    )
+actions.move_to_element_with_offset(product_type, 5, 30).click().perform()
+    print(f"Selected '{TYPE}' as Type")
