@@ -1,52 +1,23 @@
-
-def main():
-    doc, doc_name = create_doc("Step-4")
+{
+Traceback (most recent call last):
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 531, in <module>
+    main()
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 500, in main
     doc = fill_template(object_window,TEMPLATE,doc)
-    save_doc(doc,doc_name)
-
-
-
-
-
-def fill_template(object_window, template_name, doc):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 291, in fill_template
     tables = get_template_tables(template_name)
-    if not tables:
-        print(f"No tables found for template {template_name}")
-        return
-
-    for table_name, attrs in tables.items():
-        print(f"➡️ Filling table: {table_name}")
-        doc = fill_table(object_window, table_name, attrs, doc)
-    return doc
-
-def get_template_tables(template_name):
-    tables_str = os.getenv(f"{template_name.upper()}_TABLES")
-    print(tables_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\AGhosh05\OneDrive - Kenvue Brands LLC\Documents\AgenticAI\searchAndDo.py", line 304, in get_template_tables
     return json.loads(tables_str) if tables_str else {}
-
-def fill_table(object_window, table_name, attrs, doc):
-    move_to_portal(object_window)
-
-    edit_xpath = f"//i[contains(text(),'{table_name}')]/following::img[@title='Edit']"
-    click_when_ready(By.XPATH, edit_xpath, f"Edit button ({table_name})")
-    take_screenshot_and_append(doc, f"Clicked Edit button for {table_name}")
-    switch_to_window()
-
-    click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
-    click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
-    click_when_ready(By.XPATH, "//select[@name='columnSelect']", "Clicked select attribute dropdown")
-    take_screenshot_and_append(doc, f"Added new row for {table_name}")
-
-    for attr in attrs:
-        name, attr_type, value = attr["name"], attr["type"], attr["value"]
-        type_or_select("select_dropdown", By.XPATH, "//select[@name='columnSelect']", name, name)
-
-        if attr_type == "select_dropdown":
-            type_or_select("select_dropdown", By.XPATH, "//form[@name='emxTableForm_2']//select", value, name)
-        elif attr_type == "type_text":
-            type_or_select("type_text", By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", value, name)
-
-        click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
-    take_screenshot_and_append(doc, f"Filled and submitted for {table_name}")
-    save_and_submit(object_window)
-    return doc
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\json\decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
