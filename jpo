@@ -1,1 +1,11 @@
-<td><input type="radio" name="approvalAction" id="" value="approve" onchange="clearApprovalAndAbstainTaskComments('approve')">Approve</td>
+<tr>
+                    	<!-- //XSSOK -->
+                    	<td><a href="javascript:;" onclick="validateUserCredentials();return false"><img src="images/buttonDialogDone.gif" border="0" alt="Done"></a></td>
+                    	<!-- //XSSOK -->
+                    	<td><a href="javascript:;" onclick="validateUserCredentials();return false" class="button">Done</a></td>
+			            <td>&nbsp;&nbsp;</td>
+          				<!-- //XSSOK -->
+          				<td><div id="cancelImage"><a href="closeWindow();return false"><img src="images/buttonDialogCancel.gif" border="0" alt="Cancel"></a></div></td>
+			            <!-- //XSSOK -->
+						<td><div id="cancelText"><a onclick="closeWindow();return false" class="button">Cancel</a></div></td>
+          			 </tr>
