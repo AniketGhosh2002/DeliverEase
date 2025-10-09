@@ -1,375 +1,218 @@
-<%
-/*Version History
-Version 1.0
-Jun 13, 2014
-Developer: B1R
-HL: Material and Substance Framework
-Description: Added validation related to Supplier contace person
+<%--
+=================================================================
+emxCPNFormCreateValidation.jsp
 
-Version 1.1
-June 16, 2014
-Developer : FQ8
-IR : IR-303374-3DEXPERIENCER2015x
-Changes : made a call to changeCOlabel() from loadDefaultValues function, changed the functions changeCOLabel and ValidateCT to change the labels for Apply Template functionality.
-*/
-%>
-<%@page import="com.dassault_systemes.enovia.template.enumeration.TemplateRelationship"%>
-<%@page import="com.dassault_systemes.enovia.formulation.enumeration.FormulationRelationship"%>
-<%@page import="com.dassault_systemes.enovia.formulation.enumeration.FormulationAttribute"%>
-<%@page import="com.dassault_systemes.enovia.formulation.enumeration.FormulationType"%>
-<%@include file = "../emxContentTypeInclude.inc"%>
-<%@include file="../common/emxNavigatorNoDocTypeInclude.inc"%>
-<%@ page import   = "com.matrixone.apps.framework.ui.UIForm"%>
-<%@page import ="com.matrixone.apps.domain.util.EnoviaResourceBundle"%>
-<%@page import="com.matrixone.apps.cpn.CPNCommon"%>
-<%@page import="com.matrixone.apps.cpn.CPNCommonConstants"%>
-<%@ page import   = "com.matrixone.apps.cpn.enumeration.CPNAttribute" %>
-<%@ page import   = "com.matrixone.apps.cpn.enumeration.CPNRelationship" %>
+ Copyright (c) 1992-2020 Dassault Systemes.
+ All Rights Reserved.
+ This program contains proprietary and trade secret information of MatrixOne,Inc.
+ Copyright notice is precautionary only
+ and does not evidence any actual or intended publication of such program
+=================================================================
+ emxCPNValidation.jsp
+ This file is used to add any validation routines to be used by the CPN Central WebForm component
+ Version History
+ Version No     : 1.0
+ Date           : 16 June 2014
+ Developer      : G1G
+ IR/HL          : IR-304581-3DEXPERIENCER2015x
+ Change         : Changed the functions validateCT() & validateCO() to check for empty fields when Stage field is not available.
+-----------------------------------------------------------------
+--%>
+
 <%@page import="com.matrixone.apps.cpn.util.CPNUIUtil"%>
-
-
+<%@include file="../common/emxNavigatorNoDocTypeInclude.inc"%>
+<%@page import ="com.matrixone.apps.domain.util.EnoviaResourceBundle"%>
 <%
-   String browserLang = request.getHeader("Accept-Language");
-    String strSpecCategoryInterim       = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Interim");
-    String strSpecCategoryExperimental  = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Experimental");
-    String strStageListToConnectCO 		= FrameworkProperties.getProperty(context,"emxCPN.ProductData.AllowedStageListToConnectCO");
-    String strNotApplicableStage 		= FrameworkProperties.getProperty(context,"emxCPN.ProductData.NotApplicableStageListToConnectCO");
-    StringList slStageListToConnectCO 	= FrameworkUtil.split(strStageListToConnectCO, ",");
-	
-	//added for AATL-28431 - Kenvue Release 1 - Start
-	String sRegClassVForBatteryMandate = EnoviaResourceBundle.getProperty(context,"emxFrameworkStringResource", context.getLocale(), "emxFramework.BatteryFields.MandatoryForRegClass.Values");
-	
-	//added for AATL-28431 - Kenvue Release 1 - end
-	
-	//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
-    String strSpecStageCommercial 		= FrameworkProperties.getProperty(context,"emxCPN.ProdDataStage.Commercial");
-	//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 - END
-     Iterator itr= null ;
-	 //FQ8 : IR-286008 : alert message for validation method - begin
-     String strValidateSequence = CPNUIUtil.getProperty(context, "emxCPN.CopyProductData.Message.ValidIntegerForNoOfCopies");
-	 //FQ8 : IR-286008 : alert message for validation method - end
-    CPNCommon cpnObj = new CPNCommon();
-    String strPDmode = emxGetParameter(request, "PDmode");
-	String sStage = "";
-	String sPolicy = "";
-	String sType = "";
-	String sBUId = "";
-	String sTemplateId = "";
-	//Added for AATL--24723 (GCC-076936)- START
-	String sTemplateName = "";
-	//Added for AATL--24723 (GCC-076936)- END
-	//Added for AATL-25374 - START
-	String sEBOMChildren = "";
-	//Added for AATL-25374 - END
-	DomainObject dObj = null;
-	boolean isSpecification = false;
-	String strObjId = emxGetParameter(request,"objectId");
-	//Added for AATL-25374 - START
-	boolean bomContainsFD = false;
-	//Added for AATL-25374 - END
-	
-	//Added for User Story AATL-22186 -- START
-	boolean bIsChangeConnected = false;
-	String sCurrentState = "";
-	String sCAID = "";
-	String sPolicyName = "";
-	//Added for User Story AATL-22186 -- END
+String strStageListToConnectCO 		= FrameworkProperties.getProperty(context,"emxCPN.ProductData.AllowedStageListToConnectCO");
+StringList slStageListToConnectCO 	= FrameworkUtil.split(strStageListToConnectCO, ",");
+String strNotApplicableStage 		= FrameworkProperties.getProperty(context,"emxCPN.ProductData.NotApplicableStageListToConnectCO");
+String strSpecCategoryInterim       = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Interim");
+String strSpecCategoryExperimental  = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Experimental");
+Iterator itr 						= null ;
+String strImpactedSiteExclusionList = EnoviaResourceBundle.getProperty(context,"enoTemplate",context.getLocale(),"enoTemplate.Template.ImpactedSiteExclusionList");
+//Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
+String 	strSpecStageCommercial = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStage.Commercial");
+ //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END
 
-	//Added for AATL-25903    - START
-	String strIsFirstCommercial = "false";
-	String strEnsureNonDefaultExpDateMessage = "";
-	String strEnsureDefaultExpDateMessage = "";
-	//Added for AATL-25903    - END
+String loggedInUser =  context.getUser();
+String personId = PersonUtil.getPersonObjectID(context);
+String typeSelected = emxGetParameter(request, "TypeActual");
+String strPDmode = emxGetParameter(request, "PDmode");
+String sBUId = "";
 
-	//Added for AATL-23531    --- START
-	String strMCRequired = "";
-	String strMCFieldMsg = "";
-	//Added for AATL-23531    --- END
+//Added For 16629-Start
+String strPersonSecurityCtx=PropertyUtil.getAdminProperty(context, "person", context.getUser(), "preference_DefaultSecurityContext");
+StringList sList = FrameworkUtil.split(strPersonSecurityCtx,".");
+String sCTXcompanyName = "";
+String sCTXcompanyId = "";
 
-	// Added for AATL-23531 -- Starts
-	String strMQLCommand ;
-	String strMQLCommandResult =  "";
+sCTXcompanyName = (String)sList.get(1);
 
-	MQLCommand prMQL  = new MQLCommand();
-	prMQL.open(context);
-	//print attribute 'Marketing Company(s)' select range dump |
-	strMQLCommand = "print attribute 'Marketing Company(s)' select range dump |";
-	prMQL.executeCommand(context,strMQLCommand);
-	strMQLCommandResult = prMQL.getResult();
-	String mcCompanysLoV = strMQLCommandResult.trim();
-	// Added for AATL-23531 -- Ends
+//Added for AATL-23635---Start
+String sCTXCollabSpaceName = "";
+String sCTXRoleName = "";
+String sRestrictedAssignment = "";
+sCTXCollabSpaceName = (String)sList.get(2);
+sCTXRoleName = (String)sList.get(0);
+//String sMWISpecType = PropertyUtil.getSchemaProperty(context,"type_ManufacturingWorkInstruction");
+//String sFDSpecType = PropertyUtil.getSchemaProperty(context,"type_FormulaDevice");
+String sProductDataOrig = PropertyUtil.getSchemaProperty(context,"role_IPMOriginator");
+String sBusinessAdmin = PropertyUtil.getSchemaProperty(context,"role_BusinessAdministrator");
+String strRestrictedCS = "";
+
+String strRestrictedType = EnoviaResourceBundle.getProperty(context,"emxCPN", context.getLocale(),"emxCPN.Restricted.Type");
+//System.out.println("----------strRestrictedType----------- "+strRestrictedType);
+String sCollabMap = "";
+
+StringList slRestrictedType = FrameworkUtil.split(strRestrictedType,",");
+for (int itype=0;itype<slRestrictedType.size();itype++) {
+	String sPropKey = "emxCPN.Restricted.CollabSpace." + (((String)slRestrictedType.get(itype)).replace (" ",""));
+	strRestrictedCS = EnoviaResourceBundle.getProperty(context,"emxCPN", context.getLocale(),sPropKey);
+	//System.out.println("----------strRestrictedCS----------- "+strRestrictedCS);
+	StringList slRestrictedCS = FrameworkUtil.split(strRestrictedCS,",");
+	sCollabMap += ((String)slRestrictedType.get(itype))+":"+strRestrictedCS+"|";
+	for (int iCs=0;iCs<slRestrictedCS.size();iCs++) {
+		if ( sCTXCollabSpaceName.equalsIgnoreCase((String)slRestrictedCS.get(iCs))) {
+			if ((sCTXRoleName.equals(sProductDataOrig)) || (sCTXRoleName.equals(sBusinessAdmin))) {
+				sRestrictedAssignment += "," + (String)slRestrictedType.get(itype);
+				//System.out.println("----------sRestrictedAssignment----------- "+sRestrictedAssignment);
+
+			}
+		}
+
+	}
+}
+
+//Added for AATL-23635---End
+
+String strMQLCommand ;
+String strMQLCommandResult =  "";
+
+MQLCommand prMQL  = new MQLCommand();
+			prMQL.open(context);
+
+strMQLCommand = "print bus '"+DomainConstants.TYPE_COMPANY+"' '"+sCTXcompanyName+"' - select id dump";
+			prMQL.executeCommand(context,strMQLCommand);
+			strMQLCommandResult = prMQL.getResult();
+
+			sCTXcompanyId = strMQLCommandResult.trim();
+			
+// Added for AATL-23531 -- Starts
+//print attribute 'Marketing Company(s)' select range dump |
+strMQLCommand = "print attribute 'Marketing Company(s)' select range dump |";
+prMQL.executeCommand(context,strMQLCommand);
+strMQLCommandResult = prMQL.getResult();
+String mcCompanysLoV = strMQLCommandResult.trim();
+// Added for AATL-23531 -- Ends
+
+//Added For 16629-End
+
+//Added by Xcapa team in sprint 11 for TRU 18522 start here
+String sSegement = "" ;
+if(sCTXcompanyName != null && "JNJ".equals(sCTXcompanyName))
+	{
+		sSegement = "Enterprise" ;
+	}
+	else {
+		sSegement = sCTXcompanyName ;
+	}
+
+//Added by Xcapa team in sprint 11 for TRU 18522 end here
+
+out.clear();
+response.setContentType("text/javascript; charset=" + response.getCharacterEncoding());
+%>
+
+<%@ page import = "com.matrixone.apps.framework.ui.UINavigatorUtil" %>
+
+
+
+function preProcessCreatePD(){
+		populateOwner();
+		populateDesignResp();
+		//Added for 18522-Start
+	populateSegement();
+	//Added for 18522-End
+		//Added for AATL-23635----Starts
+			validateSpecTypesForRestrictedCS();
+		//Added for AATL-23635----end
+		
+		//Added for TRU-13471 ---- START
+			//var typeSelected = document.emxCreateForm.elements['TypeActualId'].value;
+			//Modified for UI translation
+			var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
+			if(typeSelected == "Product Data Part")
+			{
+				document.emxCreateForm.elements['TypeActualDisplay'].value = "Select Type";
+			}
+		if(typeSelected != null && typeSelected != ""){
+		emxFormReloadField("Policy");
+	 	emxFormReloadField("Template");
+	 	emxFormReloadField("ExpirationDate");
+	 	var tempDesc = document.getElementById("TemplateDescriptionId")
+	 	if(tempDesc!==null){
+	 	tempDesc.disabled = "disabled";
+	 	showTemplateDescription();
+	 	}
+	 	
+	 	<!-- Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN -->
+	 	<!--changeExpirationDateVisibility();-->
+		changeExpirationDateVisibilityBasedonStage(true);
+		<!-- Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END -->
+		<!-- emxFormReloadField("DesignResponsibility"); -->
+	 	reloadUOMField();
+	 	<!-- changeCOLabel(); -->
+		//Added for User Story AATL-24845 -- START
+		checkIfNonRestrictedType();
+		//Added for User Story AATL-24845 -- END
+	<!-- populateOwner(); -->
+	<!-- basicClear('CO'); -->
+		}
 	
-	if(UIUtil.isNotNullAndNotEmpty(strObjId)){
+}
+
+function changeExpirationDateVisibilityBasedonStage(displayAlert) {
 		try{
-		dObj = new DomainObject(strObjId);
-		StringList selects= StringList.create(FormulationAttribute.STAGE.getAttributeSelect(context),
-						      CPNCommonConstants.SELECT_POLICY,
-						      CPNCommonConstants.SELECT_TYPE,
-						      CPNCommonConstants.SELECT_ORGANIZATION,
-						      "from[" + TemplateRelationship.TEMPLATE.get(context) + "].to.id",
-							  "from[" + TemplateRelationship.TEMPLATE.get(context) + "].to.name",//Modified for upgrade to incorporate TRU changes
-							  "relationship[EBOM].businessobject.type");//Modified for upgrade to incorporate TRU changes
-
-		Map infoMap	 	= dObj.getInfo(context, selects);
-		sStage 			= (String)infoMap.get(FormulationAttribute.STAGE.getAttributeSelect(context));
-		sPolicy 		= (String)infoMap.get(CPNCommonConstants.SELECT_POLICY);
-		sType 			= (String)infoMap.get(CPNCommonConstants.SELECT_TYPE);
-		// Added for IR-309947
-		isSpecification = cpnObj.isTechnicalSpecificationType(context,sType) || 
-		                        FormulationType.TEST_METHOD_SPECIFICATION.getType(context).equals(sType) ;
-		if (isSpecification)
-			sStage = strNotApplicableStage;
-		sBUId			= (String)infoMap.get(CPNCommonConstants.SELECT_ORGANIZATION);
-		if(UIUtil.isNotNullAndNotEmpty(sBUId) && !FrameworkUtil.isObjectId(context, sBUId))
-			sBUId = CPNCommon.getIDForName(context,CPNCommonConstants.TYPE_ORGANIZATION, sBUId);
-		sTemplateId		= (String)infoMap.get("from[" + TemplateRelationship.TEMPLATE.get(context) + "].to.id");
-		//Added for AATL--24723 - START
-		sTemplateName		= (String)infoMap.get("from[" + TemplateRelationship.TEMPLATE.get(context) + "].to.name");
-		//Added for AATL--24723 - END
-		//Added for AATL-25374 - START
-		sEBOMChildren = (String)infoMap.get("relationship[EBOM].businessobject.type");
-		StringList bomChildrenTypes = dObj.getInfoList(context, "relationship[EBOM].businessobject.type");
-		//System.out.println("******: " + bomChildrenTypes);
-		//System.out.println("******: " + bomChildrenTypes.contains("Formula Device"));
-		bomContainsFD = bomChildrenTypes.contains("Formula Device");
-		//Added for AATL-25374 - END
-		
-		//Added for User Story AATL-22186 -- START
-		sCurrentState = dObj.getInfo(context, DomainConstants.SELECT_CURRENT);
-		sCAID = dObj.getInfo(context, "to[Change Affected Item].from.id");
-		sPolicyName = PropertyUtil.getSchemaProperty(context, "policy_COMMERCIALIZATION");
-		//System.out.println("Printing parameter sCurrentState:: "+sCurrentState);
-	  	//System.out.println("Printing parameter sCAID:: "+sCAID);
-	  	//System.out.println("Printing parameter sPolicyName:: "+sPolicyName);
-		if("Draft".equals(sCurrentState) && UIUtil.isNotNullAndNotEmpty(sCAID) && sPolicyName.equals(sPolicy)) {
-			System.out.println("INSIDE IF BLOCK");
-			bIsChangeConnected = true;
-		}
-		//Added for User Story AATL-22186 -- END
-
-		//Added for AATL-25903	by JnJ Internal Dev Team	-- STARTS
-
-		boolean bIsRevToCom = IsReviseToCommercialize(context,dObj);
-
-		strIsFirstCommercial = Boolean.toString(bIsRevToCom);
-		System.out.print("emxCPNVAlidation : " + bIsRevToCom);
-		System.out.print("emxCPNVAlidation : " + strIsFirstCommercial);
-
-		String propertyFile = "emxCPNStringResource";
-		String propertyKeyNonDefault = "emxCPN.Common.Message.EnsureNonDefaultExpDateMessage";
-		String propertyKeyDefault = "emxCPN.Common.Message.EnsureDefaultExpDateMessage";
-	        strEnsureNonDefaultExpDateMessage = EnoviaResourceBundle.getProperty(context,propertyFile,context.getLocale(),propertyKeyNonDefault);
-	        strEnsureDefaultExpDateMessage = EnoviaResourceBundle.getProperty(context,propertyFile,context.getLocale(),propertyKeyDefault);
-
-		//Added for AATL-25903	by JnJ Internal Dev Team	-- ENDS
-
-		//Added by JJT Internal Dev Team for AATL-23531 - BEGIN
-		strMCRequired = EnoviaResourceBundle.getProperty(context,propertyFile,context.getLocale(),"emxCPN.Common.Message.MarketingCompanys");
-		strMCRequired = strMCRequired.replace("\"", "\\\"");
-		System.out.println("\n\n...sType: " + sType);
-		System.out.println("strMCRequired: " + strMCRequired);
-
-		strMCFieldMsg = EnoviaResourceBundle.getProperty(context,propertyFile,context.getLocale(),"emxCPN.Common.MarketingCompanys.FieldMsg");
-		strMCFieldMsg = strMCFieldMsg.replace("\"", "\\\"");
-		System.out.println("strMCFieldMsg: " + strMCFieldMsg);
-	        //Added by JJT Internal Dev Team for AATL-23531 - END
-
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	%>
-<script language="javascript" type="text/javascript" src="../components/emxComponentsJSFunctions.js"></script>
-<script language="javascript" type="text/javascript">
-function preProcessInCreatePD()
-{
-   var PDmode = document.editDataForm.elements["PDmode"].value;
-	var policy = "";
-	if(PDmode == "copy")
-	{
-		policy = document.editDataForm.elements["PolicyForCopy"].value;
-		disableRevisionForCopyPD();
-		disableStageForSpec();
-		//changeCOLabel();
-		//changeExpirationDateVisibility();
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : BEGIN-->
-		changeExpirationDateVisibilityBasedOnStage(true);
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : END---->
-		disableRenderLangBasedOnTemplate();
-		//added to make Owner field uneditable - START
-		makeOwnerFieldUnEditable();
-		//added to make Owner field uneditable - END
-	} else if (PDmode == "revise")
-	{
-
-		policy = '<%=XSSUtil.encodeForJavaScript(context, sPolicy)%>';
-		disableRevisionForRevise();
-		//changeCOLabel();
-		disableRenderLangBasedOnTemplate();
-		<!--Commented for upgrade-->
-		//changeExpirationDateVisibility();
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : BEGIN-->
-		changeExpirationDateVisibilityBasedOnStage(true);
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : END---->
-
-		//added to make Owner field uneditable - START
-		makeOwnerFieldUnEditable();
-		//added to make Owner field uneditable - END
-	} else
-	{
-
-	var policy = document.editDataForm.Policy.value;
-	var url="../cpn/emxCPNProductDataAjaxUtil.jsp";
-		url=url+"?selectedVal="+policy;
-		url=url+"&mode=updateRev";
-		url=url+"&from=editDataForm";
-		var oXMLHTTP22 = emxUICore.createHttpRequest();
-		oXMLHTTP22.open("post", url, true);
-		oXMLHTTP22.send("");
-		var ResponseText = "";
-
-		oXMLHTTP22.onreadystatechange = function()
-		{
-			if (oXMLHTTP22.readyState == 4)
-			{
-				ResponseText = oXMLHTTP22.responseText
-				if(ResponseText != "")
-				{
-					ResponseTextArray = ResponseText.split(",");
-					ResponseTextDate = ResponseTextArray[0];
-					document.getElementById("div_Revision").innerHTML=ResponseTextDate;
-				}
+			var stage= document.emxCreateForm.elements['Stage'];
+			var expirationDate= document.emxCreateForm.elements['ExpirationDate'];
+			if(stage!=null && stage!=""&& stage.value!= undefined && stage.value == "<%=strSpecStageCommercial%>"){
+				expirationDate.readOnly = true;
+				expirationDate.nextSibling.style.visibility="hidden";
 			}
-		}
+			else
+	        {
+	            expirationDate.disabled = false;
+	            expirationDate.nextSibling.style.visibility = "visible";
+
+	        }
 	}
-
-    if (PDmode == "copy" || PDmode == "revise") {
-        basicClear('CO');
-        var editForm = document.forms["editDataForm"];
-        var uomValue;
-        if(editForm.UOM != null){
-            uomValue = editForm.UOM.value;
-            reloadUOMField();
-        }
-        if(uomValue != null && uomValue != ""){
-            editForm.UOM.value = uomValue;
-        }
-    }
-}
-
-//method has been added out of sprint to make owner field non-editable in spec copy/revise page : pmitra3
-function makeOwnerFieldUnEditable() {
-	$('input[name=ownerDisplay]').prop("readonly",true);
-	$('input[name=btnowner]').remove();
-}
-
-function setRDOForCreatePD() {
-	basicClear('OwningRegion');
-	basicClear('CO');
-	return true;
-}
-
-function changeHandlerForCO(){
-	var CTOID 	= $('input[name="ChangeTemplateOID"]').val();
-	var changeTemplate 	= $('input[name="ChangeTemplate"]').val();
-	if(CTOID == "" || changeTemplate == "") {
-		basicClear('CO');
-	} else {
-		$('input[name="CO"]').val("CreateNew");
-		$('input[name="CODisplay"]').val("<xss:encodeForJavaScript><%=CPNUIUtil.getProperty(context, "emxCPN.DefaultCO.CreateNew", context.getSession().getLanguage()) %></xss:encodeForJavaScript>");
-		$('input[name="COOID"]').val("CreateNew");
-	}
-}
-
-
-	function setProductDataRevision()
-	{
-		var url="../cpn/emxCPNProductDataAjaxUtil.jsp";
-		url=url+"?selectedVal=IPM Part";
-		url=url+"&mode=updateRev";
-		url=url+"&from=editDataForm";
-		var oXMLHTTP22 = emxUICore.createHttpRequest();
-		oXMLHTTP22.open("post", url, true);
-		oXMLHTTP22.send("");
-		var ResponseText = "";
-
-		oXMLHTTP22.onreadystatechange = function()
+	catch (e)
 		{
-			if (oXMLHTTP22.readyState == 4)
-			{
-				ResponseText = oXMLHTTP22.responseText
-				if(ResponseText != "")
-				{
-					ResponseTextArray = ResponseText.split(",");
-					ResponseTextDate = ResponseTextArray[0];
-					document.getElementById("div_Revision").innerHTML=ResponseTextDate;
-				}
-			}
+		alert ("Error"+e);
 		}
-	}
+}
 
-	function changeHandlerForStatus()
-	 {
-		//Move to Commercialize command remove alerts as "Expiration Date" field is not exist on page
-		// emxFormReloadField("ExpirationDate");
-		// changeExpirationDateVisibility(true);
-	 }
-
-	//Method to reload Policy and Revision field of type_CloneProductData webform
-	function showPDPolices()
-	{
-		emxFormReloadField("PolicyForCopy");
-		
-		//added by AS-TCS for TRU-11226 : START
-		if(document.editDataForm.PharmaLifecycleStage)
-		{
-			emxFormReloadField("PharmaLifecycleStage");
-		}
-		//added by AS-TCS for TRU-11226 : END
-		//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
-		emxFormReloadField("ExpirationDate");
-		changeExpirationDateVisibilityBasedOnStage(true);
-		//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 -  END
-		emxFormReloadField("Template");
-
-	<!--	changeCOLabel();-->
-
-		<%
-		String propertyFile = "emxCPNStringResource";
-		String propertyKey = "emxCPN.Common.Stage.MappedPolicyNotFound";
-		String errorPDMessage = EnoviaResourceBundle.getProperty(context,propertyFile,context.getLocale(),propertyKey);
-		%>
-		if((document.editDataForm.PolicyForCopy.value == "" || document.editDataForm.PolicyForCopy.value == null) && document.editDataForm.Stage.value != "")
-			{
-			alert("<%=errorPDMessage%>");
-			return;
-			}
-	}
-	
-	//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 -BEGIN
-	function validateExpDateforStage()
-	{
-		var expDate = document.forms[0].ExpirationDate_msvalue.value;
-		try {
-		var stage = document.forms[0].Stage.value;
-		} catch(e) {
-			stage = "<%=sStage%>";
-		}
+function validateExpDateforStage()
+    {
+    	var expDate = document.forms[0].ExpirationDate_msvalue.value;
+    	var stage = document.forms[0].Stage.value;
 
 		expDate = new Date(parseInt(expDate));
 		var today = new Date();
 		if (today.getFullYear() < 1950)
-		{
-		  today.setFullYear(expDate.getFullYear() + 100);
-		}
-		if (expDate.getFullYear()< 1950)
-		{
-			expDate.setFullYear(expDate.getFullYear() + 100);
-		}
+	    {
+	      today.setFullYear(expDate.getFullYear() + 100);
+	    }
+	    if (expDate.getFullYear()< 1950)
+	    {
+	        expDate.setFullYear(expDate.getFullYear() + 100);
+	    }
+
 		expDate.setHours(23);
 		expDate.setMinutes(59);
 		expDate.setSeconds(59);
 		expDate.setMilliseconds(999);
+
 		var numberOfDays = (Date.parse(expDate) - Date.parse(today))/86400000;
 		numberOfDays = Math.floor(numberOfDays);
 		//-----------------Modified for AATL-21555------------------start-------------
@@ -384,1405 +227,246 @@ function changeHandlerForCO(){
 		} else{
 			return true;
 		}
-	}
-	
-	function changeExpirationDateVisibilityBasedOnStage(displayAlert)
-	{
-		try{
-			var stage= document.editDataForm.elements['Stage'];
-	        if(stage == null || stage == "undefined"){
-				stage = document.createElement("input");
-				stage.type = "hidden";
-				stage.value = "<%=sStage%>";
-	        }
-			var expirationDate= document.editDataForm.elements['ExpirationDate'];
-			if(stage != null && stage != "" && stage.value!= undefined && stage.value == "<%=strSpecStageCommercial%>")
-			{
-				expirationDate.readOnly = true;
-				expirationDate.parentNode.nextSibling.style.visibility="hidden";
-			}
-			else
-			{
-				expirationDate.disabled = false;
-				expirationDate.parentNode.nextSibling.style.visibility = "visible";
-
-			}
-		}
-		catch (e)
-		{
-			alert ("Error : "+e);
-		}
-	}
-	//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 -END
-
-	 function confirmChangeTemplate()
-	    {
-	    	 //Modified for AATL-24723 -- START
-			 //var sTemplateId = document.editDataForm.elements['TemplateId'].value;
-	    	 //var orgTemplateId ="<%=XSSUtil.encodeForJavaScript(context, sTemplateId)%>";
-	         //if(sTemplateId != "" && sTemplateId != orgTemplateId )
-	         //{
-	             //return  confirm("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.ChangeTemplate.ConfirmMessage")%>");
-
-	         //}
-	         //return true;
-			 var el = document.getElementById('TemplateId');
-			var selectedTemplateName = el.options[el.selectedIndex].text;
-			 //var sTemplateName = document.editDataForm.elements['TemplateId'].text;
-			 //alert("selectedTemplateName:::: "+selectedTemplateName);
-	    	 var orgTemplateName ="<%=XSSUtil.encodeForJavaScript(context, sTemplateName)%>";
-			  if(selectedTemplateName != "" && selectedTemplateName != orgTemplateName )
-	         {
-	              return  confirm("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.ChangeTemplate.ConfirmMessage")%>");
-
-	         }
-	         return true;
-			 //Modified for AATL-24723 -- END
-	    }
-
-	 function changeHandlerForTemplate() {
-	        emxFormReloadField("TemplateDescription");
-	        disableRenderLangBasedOnTemplate();
-	    }
-
-
-		function disableRenderLangBasedOnTemplate(){
-			var tempId = document.getElementById("TemplateId").value;
-			var rendLang = document.getElementById("Render LanguageId");
-			if(rendLang == null){
-				rendLang = document.getElementById("RenderLanguageId");
-			}
-			var prevObj = document.getElementsByName("objectId")[0];
-			var objectId = "";
-			if(prevObj !== undefined && prevObj !== null && prevObj !== ""){
-			objectId = prevObj.value;
-			}
-			if(tempId!==null && tempId!==""){
-		   	var params = new Object();
-			params.templateId=tempId;
-			params.prevObjectId = objectId;
-			if(objectId!==null && objectId!=="" && objectId != undefined){
-			params.prevObjectId = objectId;
-			}
-		    var jsonObj = JSON.stringify(params);
-		    var finalURL = "../cpn/emxCPNPDAjax.jsp?mode=ClaimedValues";
-
-		    $.ajax({
-					dataType: "json",
-		            url: finalURL,
-		            type: "POST",
-		            data: jsonObj,
-		            contentType:"json",
-		            success: function (result) {
-		                    var serverResponse=result.serverResponse;   
-		                    var isClaimedAttr=result.isClaimed;    
-		           			if(isClaimedAttr){
-		            			serverResponse = serverResponse.replace(/\s/g,"");
-		            			rendLang.value = serverResponse;
-		            			if(rendLang.value=="") {
-		            				serverResponse = serverResponse.replace(/\s/g,"_");
-		            				rendLang.value = serverResponse;
-		            			}
-		            			  var lngth = rendLang.options.length;
-		            			  for(var i=0; i<lngth; i++){
-			            			  if(rendLang.options[i].value !== serverResponse){
-			            			  	rendLang.setAttribute("readonly","readonly");
-			            			  	rendLang.options[i].disabled=true;
-			            			  }
-		            			}
-		            		}else{
-		            		rendLang.removeAttribute("readonly");
-			            			var lngth = rendLang.options.length;
-			            			for(var i=0; i<lngth; i++){
-			            			  rendLang.removeAttribute("readonly");
-			            			  	rendLang.options[i].disabled=false;
-			            			}
-			            			rendLang.value = serverResponse;
-		            		}
-		               	}
-		           });
-			}
-			}
-//IR-416225 Making "Design Responsibility" field non editable
-	/*  function changeHandlerForDR() {
-	        emxFormReloadField("ChangeTemplate");
-	        basicClear('CO');
-	        emxFormReloadField("OwningRegion");
-	  	} */
-	
-	function showPDRevision()
-	{
-		emxFormReloadField("Revision");
-	}
-
-	function loadDefaultValues() {
-        disableTemplateDescription();
-        var expirationDate= document.editDataForm.elements['ExpirationDate'].value;
-        if(expirationDate == null ||expirationDate=="")
-        	{
-         emxFormReloadField("ExpirationDate");
-
-        	}
-			//Modified for upgrade
-        //changeExpirationDateVisibility();
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : BEGIN-->
-		changeExpirationDateVisibilityBasedOnStage(true);
-		<!--Added for TRU-11103, TRU-11104 & TRU-6979 : END---->
-       // emxFormReloadField("DesignResponsibility");
-        emxFormReloadField("ChangeTemplate");
-		//FQ8 : IR-303374-3DEXPERIENCER2015x - begin
-       <!-- changeCOLabel(); -->
-		//FQ8 : IR-303374-3DEXPERIENCER2015x - end
-        var PDmode = "<xss:encodeForJavaScript><%=strPDmode%></xss:encodeForJavaScript>";
-        if(PDmode == "ApplyTemplate")
-		{
-        	disableCHTandCO()
-		}
     }
+//Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END
+function populateOwner() {
 	
-	 function disableCHTandCO() {
-		 var CT 	= $('input[name="ChangeTemplateDisplay"]').val();
-		 var CO 	= $('input[name="COfieldValue"]').val();
-		 if ((CT != null && "" != CT) || (CO != null && "" != CO)) 
-		 {
-			 //disable ChangeTemplate
-			 var eleman = $('input[name="ChangeTemplateDisplay"]')[0];
-			 var jelem = $(eleman);
-			 jelem.attr('readonly', true);
-			//disable ChangeOrder
-			 eleman = $('input[name="CODisplay"]')[0];
-			 jelem = $(eleman);
-			 jelem.attr('readonly', true);
-			//disable chooser buttons
-			 $('[name="btnChangeTemplate"]').attr("disabled","true");
-			 $('[name="btnCO"]').attr("disabled","true");
-			 //hide clear links
-			 var clear = $('[name="btnChangeTemplate"]').parent();
-			 var td = clear.next();
-			 td.hide();
-			 clear = $('[name="btnCO"]').parent();
-			 td = clear.next();
-			 td.hide();
-		 }
-	 }
-	 function disableTemplateDescription() {
-         //document.editDataForm.elements['TemplateDescription'].disabled =true;
-		 editForm = $('form[name="editDataForm"]');
-		 editForm.find("textarea[name='TemplateDescription']").attr('disabled','disabled');
-     }
+	$('[name="ObjectOwnerDisplay"]').val("<xss:encodeForJavaScript><%=loggedInUser %></xss:encodeForJavaScript>");
+	$('[name="ObjectOwner"]').val("<xss:encodeForJavaScript><%=loggedInUser %></xss:encodeForJavaScript>");
+	$('[name="ObjectOwnerOID"]').val("<xss:encodeForJavaScript><%=personId %></xss:encodeForJavaScript>");
+	
+	//added to make Owner field uneditable - START
+	$('input[name=ObjectOwnerDisplay]').prop("readonly",true);
+	$('input[name=btnObjectOwner]').remove();
+	//added to make Owner field uneditable - END
+}
 
-
-	 function changeExpirationDateVisibility(displayAlert)
-	 {
-	        var status= document.editDataForm.elements['Status'];
-	        if(status == null){
-	        	status = document.editDataForm.elements['status'];
-	        }
-			
-			//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 -BEGIN
-			var stage= document.editDataForm.elements['Stage'];
-	        if(stage == null || stage == "undefined"){
-				stage = document.createElement("input");
-				stage.type = "hidden";
-				stage.value = "<%=sStage%>";
-	        }
-	        /*var expirationDate= document.editDataForm.elements['ExpirationDate'];
-	        if (status.value != "<%=strSpecCategoryInterim%>" && status.value != "<%=strSpecCategoryExperimental%>" )
-	        {
-	            	var mssg = "<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.ExpirationDateIsNotEditableWhenPermanent")%>";
-	            	expirationDate.title = mssg;
-
-	            expirationDate.readOnly = true;
-	            expirationDate.parentNode.nextSibling.style.visibility = "hidden";
-
-	        } 
-			//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
-			else */
-			if(stage.value == "<%=strSpecStageCommercial%>")
-			{
-				if (displayAlert)
-				{
-					alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.ExpirationDateIsNotEditableWhenCommercial")%>");
-				}
-				expirationDate.readOnly = true;
-				expirationDate.parentNode.nextSibling.style.visibility="hidden";
-			}
-			//Added by AS-TCS for TRU-6979,TRU-11103,TRU-11104 - END
-			else
-	        {
-	        	expirationDate.title = $('label[for="ExpirationDate"]').get(0).innerHTML;
-	        	expirationDate.disabled = false;
-	            expirationDate.parentNode.nextSibling.style.visibility = "visible";
-
-	        }
-	    }
-
-
-
-
-		function disableRevisionForCopyPD()
-	    {
-				document.getElementById('Revision').disabled = "disabled";
-	    }
-
-		function disableRevisionForRevise()
-	    {
-				document.getElementById('Revision').disabled = "disabled";
-	    }
-
-		function disableStageForSpec()
-		{
-	    	var PDmode = "<xss:encodeForJavaScript><%=strPDmode%></xss:encodeForJavaScript>";
-	    	//XSSOK
-		 	var isSpecificationType = "<%=isSpecification%>";
-		 	if(isSpecificationType=='true' && PDmode!=null && PDmode!='null' && PDmode!="")
-		 	{
-		 		document.getElementById("calc_Stage").childNodes[0].className = "label";
-		 		document.editDataForm.elements['Stage'].disabled  = "disabled";
-		 	}
-
-	    }
-
-		//CPN V6R2013x:
-		//Added function to load default values in Preprocess of Go To Stage webForm:CPNGoToStageForm
-		function loadDefaultValuesEditStagePreProcess(){
-
-			disableRevision();
-			disableTempalteDescriptionInGoToStage();
-			emxFormReloadField("CPNGoToStage");
-			//Move to Commercialize command remove alerts as "Expiration Date" field is not exist on page
-			//changeExpirationDateVisibility();
-			goToStagePreProcess();
-		}
-
-		//CPN V6R2013x: Added function To disable Product Data Revision Field in webForm:CPNGoToStageForm
-		function disableRevision() {
-			document.editDataForm.elements['CPNRevision'].disabled  = "disabled";
-	    }
-
-		//CPN V6R2013x: Added function To disable Template Description Field in webForm:CPNGoToStageForm
-		function disableTempalteDescriptionInGoToStage() {
-	        document.editDataForm.elements['CPNTemplateDesc'].disabled =true;
-	    }
-
-		//CPN V6R2013x: Added function Added Function to display Error message popup in PreProcess of webForm:CPNGoToStageForm
-		//If New Stage values are not Available
-		function goToStagePreProcess(){
-
-			//to varify if new Stages found or not
-			var newStageRangeValues = document.editDataForm.CPNGoToStage.options;
-			var foundRange = false;
-			for(var i=0; i<newStageRangeValues.length ; i++){
-				var strStageVal = newStageRangeValues[i].value;
-
-				if(strStageVal != ""){
-					foundRange = true;
-					break;
-				}
-			}
-
-			if(foundRange==false){
-				<%
-				i18nNow i18nNow = new i18nNow();
-	            String strPropertyFile = "emxCPNStringResource";
-	            String strPropertyKey = "emxCPN.Common.GoToStage.NoFurtherStageExists";
-	            String strLanguage = request.getHeader("Accept-Language");
-	            String strErrorMessage = EnoviaResourceBundle.getProperty(context,strPropertyFile,context.getLocale(),strPropertyKey);
-				%>
-				alert("<%=strErrorMessage%>");
-				getTopWindow().closeWindow();
-			}
-		}
-
-		 function showTemplateDescription(){
-				var templateSelect = document.editDataForm.elements['TemplateId'];
-				var i,str;
-				var oid=new Array();
-				for(i=0;i<templateSelect.length;i++)
-				{
-					oid[i]=templateSelect.options[i].value;
-				}
-				var encodedPipeForURL=encodeURIComponent("|"); 
-				var txt=oid.join(encodedPipeForURL);
-				var url="../cpn/emxCPNPDAjax.jsp";
-			 	url=url+"?selectedVal="+txt;
-				url=url+"&mode=templateDescription";
-				url=url+"&from=editDataForm";
-
-				var oXMLHTTP22 = emxUICore.createHttpRequest();
-				oXMLHTTP22.open("post", url, true);
-				var ResponseText = "";
-				oXMLHTTP22.onreadystatechange = function() {
-					if (oXMLHTTP22.readyState == 4) {
-						  ResponseText = oXMLHTTP22.responseText;
-						  var selTemplate = document.editDataForm.elements['TemplateId'];
-						  if(ResponseText != "") {
-							var optionsAry = removeEmptyItems(selTemplate.options);
-							
-							ResponseTextArray = ResponseText.split("|");
-							for(var i=0;i<ResponseTextArray.length;i++)
-							{
-									if(optionsAry[i] != undefined){
-										optionsAry[i].setAttribute("title",ResponseTextArray[i].trim());
-								}
-							}
-							updateTemplateFieldTitle();
-						}
-					}
-				}
-
-				oXMLHTTP22.send("");
-			}
-
-		function updateTemplateFieldTitle() {
-			var selTemplate = document.editDataForm.elements['TemplateId'];
-			if(selTemplate.options[selTemplate.selectedIndex].value!="") {
-				selTemplate.setAttribute("title",selTemplate.options[selTemplate.selectedIndex].getAttribute("title"));
-			} else {
-				selTemplate.setAttribute("title","Template");
-			}
-		}
-		 
-		function removeEmptyItems (inAry) {
-			var rtnAry = new Array();
-			for(i = 0; i < inAry.length; i++ ) {
-				if (!isNullOrEmpty( inAry[i].value ))
-					rtnAry.push(inAry[i]);
-			}
-			return rtnAry;
-		}
-
-		//CPN V6R2013x: Added function for reload Policies,Revision and Template values on change of Stage Value in webForm:CPNGoToStageForm
-		function loadPoliciesAndTemplates(){
-			var stage = document.editDataForm.CPNGoToStage.value;
-			if(stage == "")
-				{
-				document.getElementById("CPNPolicyId").innerHTML = "";
-				document.editDataForm.elements['CPNRevision'].value  = "";
-				document.getElementById("TemplateId").innerHTML = "";
-				}
-			else
-				{
-					emxFormReloadField("CPNPolicy");
-					//added by AS-TCS for TRU-2641 : START
-					if(document.editDataForm.PharmaLifecycleStage)
-					{
-						emxFormReloadField("PharmaLifecycleStage");
-					}
-					//added by AS-TCS for TRU-2641 : END
-					emxFormReloadField("CPNRevision");
-					emxFormReloadField("Template");
-					showTemplateDescription();
-					<!--changeCOLabel();-->
-				}
-		}
-
-		//CPN V6R2013x: Added Function to reload revision field based on selected Policy for Product Data in webForm:CPNGoToStageForm
-		function getNewProductDataRevision(){
-
-			//added by AS-TCS for TRU-2641 : START
-			if(document.editDataForm.PharmaLifecycleStage)
-			{
-				emxFormReloadField("PharmaLifecycleStage");
-			}
-			//added by AS-TCS for TRU-2641 : END
-			emxFormReloadField("CPNRevision");
-
-		}
-
-		//CPN V6R2013x: Added function to reload Template Description based on selected Product Data Template in webForm:CPNGoToStageForm
-		function loadTemplateDescription(){
-
-			emxFormReloadField("CPNTemplateDesc");
-			updateTemplateFieldTitle();
-			disableRenderLangBasedOnTemplate();
-
-		}
-
-		 function changeCOLabel() {
-	    		var canAttachECOtoPD	= false;
-	    		var PDmode = "<xss:encodeForJavaScript><%=strPDmode%></xss:encodeForJavaScript>";
-	    		if(PDmode==null || PDmode=='null' || PDmode==""){
-			 		PDmode = document.editDataForm.elements["PDmode"].value;
-			 	}
-	    		var stage="";
-	    		if(PDmode == "copy"){
-					stage= document.editDataForm.Stage.value;
-				}else if (PDmode == "revise"){
-					stage = "<%=XSSUtil.encodeForJavaScript(context, sStage)%>";
-				}else if(PDmode == "GoToStage"){
-					stage = document.editDataForm.CPNGoToStage.value;
-					//FQ8 : IR-303374-3DEXPERIENCER2015x - begin
-				}else if(PDmode == "ApplyTemplate")
-				{
-					<%
-					if(UIUtil.isNullOrEmpty(sStage) && UIUtil.isNotNullAndNotEmpty(sPolicy))
-					{
-						sStage = MqlUtil.mqlCommand(context, "print policy $1 select $2 dump $3 ",sPolicy,"property[StageMapping].value","|");
-					}
-					%>
-					stage = "<%=XSSUtil.encodeForJavaScript(context, sStage)%>";
-				}
-				//FQ8 : IR-303374-3DEXPERIENCER2015x - begin
-	    		canAttachECOtoPD = canAttachECO(stage);
-	    		 var CT 	= $('input[name="ChangeTemplatefieldValue"]').val();
-	    		 var CO 	= $('input[name="COfieldValue"]').val();
-	    		if(canAttachECOtoPD && (CT==null || CT=="") && (CO==null || CO=="")){
-	    			document.getElementById("calc_ChangeTemplate").childNodes[0].className = "labelRequired";
-	    			document.getElementById("calc_CO").childNodes[0].className = "labelRequired";
-	    		}else{
-	    			document.getElementById("calc_ChangeTemplate").childNodes[0].className = "label";
-	    			document.getElementById("calc_CO").childNodes[0].className = "label";
-	    		}
-	    	}
-		 function canAttachECO(stage){
-
-				<%
-				String str = "";
-				itr = slStageListToConnectCO.iterator();
-				while(itr.hasNext()){
-					str = (String)itr.next();
-				%>
-				if(stage!=null && stage!="" && (stage=='<%=str%>' || stage== '<%=strNotApplicableStage%>') ){
-					return false;
-				}
-				<%}%>
-
-				return false;
-			}
-
-		 /*
-			 * CPN V6R2013x:
-			 * Added function validate field:CO if user
-			 * selects Stage:Production in webForm:CPNGoToStageForm and type_CloneProductData
-			 */
-		    function validateCT(){
-				 	var stage = '';
-				 	var eco	  = '';
-				 	var PDmode = "<%=XSSUtil.encodeForJavaScript(context, strPDmode)%>";
-					//XSSOK
-				 	var isSpecificationType = "<%=isSpecification%>";
-				 	if(PDmode==null || PDmode=='null' || PDmode==""){
-				 		PDmode = document.editDataForm.elements["PDmode"].value;
-				 	}
-
-				 	if(PDmode!=null && PDmode!='null' && PDmode!=""){
-				 		var CT 	= $('input[name="ChangeTemplateOID"]').val(); //document.getElementById("ChangeTemplateOID").value;
-
-
-								if(PDmode == "copy"){
-									stage= document.editDataForm.Stage.value;
-								}else if (PDmode == "revise"){
-									stage = "<%=XSSUtil.encodeForJavaScript(context, sStage)%>";
-								}else if(PDmode == "GoToStage"){
-									stage = document.editDataForm.CPNGoToStage.value;
-									//FQ8 : IR-303374-3DEXPERIENCER2015x - begin
-								}else if(PDmode == "ApplyTemplate")
-								{
-									<%
-									if(UIUtil.isNullOrEmpty(sStage) && UIUtil.isNotNullAndNotEmpty(sPolicy))
-									{
-										sStage =  MqlUtil.mqlCommand(context, "print policy $1 select $2 dump $3 ",sPolicy,"property[StageMapping].value","|");
-									}
-									%>
-									stage = "<%=XSSUtil.encodeForJavaScript(context, sStage)%>";
-									CT 	= $('input[name="ChangeTemplateDisplay"]').val();
-									CO  = $('input[name="CODisplay"]').val();
-								}
-								//FQ8 : IR-303374-3DEXPERIENCER2015x - begin
-						}
-
-			    	var canAttachECOtoPD = canAttachECO(stage);
-
-					if(canAttachECOtoPD && (CT==null || CT=="") && (CO==null || CO=="")){				
-						<!-- alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ChangeTemplate")%>"); -->
-
-						return true;
-					}else{
-						return true;
-					}
-			}
-                   // Utitliy method to check if null or empty string
-	           // returns true if undefined, null, "", NaN is passed
-	           function isNullOrEmpty(val) {
-				return !val;
-                    }
-		    function validateCO(){
-		    var PDmode = "<%=XSSUtil.encodeForJavaScript(context, strPDmode)%>";
-		    	var stage;
-		    	if(PDmode == "copy")
-		    		stage=document.editDataForm.Stage;
-		    	else if (PDmode== "revise" ||PDmode== "ApplyTemplate" )
-		    		stage = "<%=XSSUtil.encodeForJavaScript(context, sStage)%>";
-	            else if (PDmode== "GoToStage")
-		    		stage=document.editDataForm.CPNGoToStage;
-		    	var CO 	= $('input[name="CODisplay"]').val();
-			    var CT 	= $('input[name="ChangeTemplateDisplay"]').val();
-		      	var canAttachECOtoPD	= false;
-		      	if(stage)
-		    	{
-		      	      if(PDmode=="revise" || PDmode== "ApplyTemplate")
-		      			canAttachECOtoPD = canAttachECO(stage);
-		      			else
-		    		    canAttachECOtoPD = canAttachECO($(stage).val());
-		    	}
-
-		    	// IR-411787-3DEXPERIENCER2017x - Added CO empty check if CT is present
-                 if((!isNullOrEmpty(CT) || canAttachECOtoPD == true) && (isNullOrEmpty(CO)))
-		    	{
-		    		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.CO")%>");
-		    		return false;
-		    	}else{
-		    		return true;
-		    	}
-		    }
-
-		   function validateExpDate()
-		    {
-		    	var expDate = document.forms[0].ExpirationDate_msvalue.value;
-		    	var statusObj = document.forms[0].Status;
-		    	var status;
-		    	if(statusObj == "undefined" || statusObj == null || statusObj == ""){
-		    		status = document.forms[0].status.value;
-		    	} else {
-		    		status = document.forms[0].Status.value;		    		
-		    	}
-		    	expDate = new Date(parseInt(expDate));
-		    	//R420-IR-601604 -The time is set to zero to allow the current date to be set as Expiration Date.
-		    	expDate.setHours(0,0,0,0);
-				var today = new Date();
-			    today.setHours(0,0,0,0);
-				var numberOfDays = (Date.parse(expDate) - Date.parse(today))/86400000;
-				if(numberOfDays < 0)	{
-					alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ExpirationDate")%>");
-					return false;
-				} else{
-					return true;
-				}
-		    }
-		   
-		    function validateEstimatedCompletionDate() {
-		    	var strCompletionDate_msvalue = document.forms['editDataForm'].elements["EstCompletionDate_msvalue"].value;
-		    	var strCompletionDate = document.forms['editDataForm'].elements["EstCompletionDate"].value;
-
-		        var currentDate = new Date();
-		        currentDate.setHours(0,0,0,0);
-		        var eDate = new Date(new Date(parseInt(strCompletionDate_msvalue)).toLocaleDateString());
-		        eDate.setHours(0,0,0,0);
-		       if(trimWhitespace(strCompletionDate) != "" && strCompletionDate != undefined) {
-		    	    if(eDate<currentDate) {
-		    	    	alert("<%=EnoviaResourceBundle.getProperty(context,"enoTemplateStringResource",context.getLocale(),"enoTemplate.ValidationErrorMessage.EstimatedCompleteDate")%>");
-		    	        return false;
-		    	    }
-		        }
-		        return true;
-		    }
-		    function enableSupplierContact()
-		    {
-		  	  	var SupplierDisplay    = $('[name="SupplierDisplay"]');
-		  	  	var btnSupplierContact    = $('[name="btnSupplierContact"]');
-
-		  	  	if(SupplierDisplay.val() == '') {
-		  	  		$('[name="SupplierContactDisplay"]').val("");
-		  	  		$('[name="SupplierContact"]').val("");
-		  	  		$('[name="SupplierContactOID"]').val("");
-		  		  	btnSupplierContact.attr("disabled","true");
-		  	  	} else {
-		  		  	btnSupplierContact.removeAttr("disabled");
-		  	  	}
-		    }
-
-		    function validateSupplierSelection()
-		    {
-		    	var SupplierDisplay    = $('[name="SupplierDisplay"]');
-		    	var btnSupplierContact    = $('[name="btnSupplierContact"]');
-		    	if(SupplierDisplay.val() == '')	{
-		    		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Alert.AssignSupplier")%>");
-		  	  		btnSupplierContact.attr("disabled","true");
-		        	return false;
-		     	}else{
-		     		btnSupplierContact.removeAttr("disabled");
-		     	}
-		     	return true;
-		  	}
-
-//FQ8 : IR-286008 : validation method for validating NoOfCopies filed in copy PD page - begin
-		    function isInteger()
-		    {
-		        var str = document.editDataForm.NoOfCopies.value;
-		       	var num = "0123456789";
-				var numberOfCopies = parseInt(str);
-				if(numberOfCopies <= 0)
-				{
-					 // XSSOK
-		    		  alert("<%=strValidateSequence%>");
-		    		  return false;
-				}
-		    	for(var i=0;i<(str.length);i++)
-		    	{
-		    		if(num.indexOf(str.charAt(i))==-1)
-		    		{
-		    		// XSSOK
-		    		  alert("<%=strValidateSequence%>");
-		    		  return false;
-		    		}
-		    	}
-		    	return true;
-		    }
-			
-			//FQ8 : IR-286008 : validation method for validating NoOfCopies filed in copy PD page - end
-//Added by Cross sprint 10 starts
-//below method generates the chooser URL for 'EDIT' page for each cascaded list added in Sprint 10
-	//TRU ID: 9937
-  function generateChooserURL(formField, parentField, selectionType, sObjectId, parentValue) {
-		 var formFieldName          = formField.name;
-        var actualFormFieldName    = formFieldName.substring(3);
-        var objForm                = document.forms[0];
-        var actualFormField        = objForm.elements[actualFormFieldName];
-        var selValues              = actualFormField.value;
-
-        if(selValues==""){
-            selValues="none";
-        } else {
-            selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
-        }
-        //var parentValue="";
-        var parentFieldName="";
-		if("Owner Group"== parentField)
-		{
-			if(document.getElementsByName(parentField)[0]) {
-				parentValue = document.getElementsByName(parentField)[0].value;
-				parentFieldName = parentField;
-			}
-		}
-        if(parentValue==""){
-            parentValue="none";
-            alert("Please select a value for "+parentFieldName+ "!");
-            return false;
-        } else {
-            parentValue= parentValue.replace(/&/g, "am-percent"); //remove & with am-percent
-            parentValue=parentValue.replace(/\s/g, '');
-        }
-         var URL = "../components/jnj_CascadedChooserFS.jsp?objectId="+sObjectId+"&parent="+parentFieldName+"&parentValue="+parentValue+"&selectedValue="+selValues+"&child="+actualFormFieldName+"&HelpMarker=emxhelpsearch&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&suiteKey=CPN&Selection="+selectionType+"&targetLocation=popup";
-        showChooser(URL,700,600);
-    }
-//Added by Cross sprint 10 ends
-
-//Added by Tarique for Bug Fix- Issue #7- Starts
-function generateChooserURLForImpactedSite(formField) {
-		 var formFieldName          = formField.name;
-        var actualFormFieldName    = formFieldName.substring(3);
-	 var displayFormFieldName   = actualFormFieldName + "Display";
-        var objForm                = document.forms[0];
-        var actualFormField        = objForm.elements[actualFormFieldName];
-	var displayFormField        = objForm.elements[displayFormFieldName];
-        var selValues              = actualFormField.value;
-	var displayValues           = displayFormField.value;
-		///Added for AATL-30063 starts
-		///Added for AATL-30503 starts
-		var objectIdElements = document.getElementsByName("objectId");
-		// Check if an object id was found and then get its 'value'
-		var objectIdValue = "";
-		alert(objectIdElements.length);
-		if (objectIdElements.length > 0) {
-			objectIdValue = objectIdElements[0].value;
-			alert(objectIdValue);
-		}
-		///Added for AATL-30503 ends
-	    var trElement = document.getElementById('calc_Type');;
-		var tdElements = trElement.cells;
-		var typeDisplayValue=tdElements[1].textContent;
-		var typeDisplayValue = typeDisplayValue.trim();
-		//alert ("TYPE:"+typeDisplayValue+":::");
+//Added for 16629-Start
+function populateDesignResp() {
 		
-		var trElementName = document.getElementById('calc_Name');;
-		var tdElementNameCells = trElementName.cells;
-		var typeDisplayValueName=tdElementNameCells[1].textContent;
-		var typeDisplayValueName = typeDisplayValueName.trim();
-		//alert ("NAME-->"+typeDisplayValueName+":::");
-		
-		var trElementNameRev = document.getElementById('calc_Revision');;
-		var tdElementRevCells = trElementNameRev.cells;
-		var typeDisplayValueRev=tdElementRevCells[1].textContent;
-		var typeDisplayValueRev = typeDisplayValueRev.trim();
-		//alert ("REVISION-->"+typeDisplayValueRev+":::");
-		
-		///Added for AATL-30063 end
-        if(selValues=="" || displayValues==""){
-            selValues="null";
-        } else {
-            selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
-        }
-         /*var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&form=AEFSearchOrganizationForm&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=../common/AEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";*/
-         
-		// Commented and modified for AATL-30063
-		// var URL = "../common/emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&form=AEFSearchOrganizationForm&selectedValue="+selValues+"&selection=multiple&table=AEFOrganizationChooserDetails&includeOIDprogram=enoTemplateUI:getBusinessUnits&showInitialResultsCustom=false&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=../common/AEFSearchUtil.jsp";
-		// Modified for AATL-30503
-		//var URL = "../common/emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&form=AEFSearchOrganizationForm&selectedValue="+selValues+"&selection=multiple&table=AEFOrganizationChooserDetails&includeOIDprogram=enoTemplateUI:getBusinessUnits&showInitialResultsCustom=false&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&selectedtype="+typeDisplayValue+"&selectedName="+typeDisplayValueName+"&selectedRev="+typeDisplayValueRev+"&submitURL=../common/AEFSearchUtil.jsp";
-		var URL = "../common/emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&form=AEFSearchOrganizationForm&selectedValue="+selValues+"&selection=multiple&table=AEFOrganizationChooserDetails&includeOIDprogram=enoTemplateUI:getBusinessUnits&showInitialResultsCustom=false&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&selectedtype="+typeDisplayValue+"&selectedObjectId="+objectIdValue+"&submitURL=../common/AEFSearchUtil.jsp";
-		 
-		 showChooser(URL,700,600);
-		
-    }
-//Added by Tarique for Bug Fix- Issue #7- Ends
-
-//Added  for AATL-24312 for removal of Impacted Site --- STARTS
-function editImpactedSite()
-	{
-		//alert("In emxCPNValidation::editImpactedSite");
-		var els = document.getElementsByName("btnImpacted Site");
-		for (var i = 0, l = els.length; i < l; i++) {
-			var el = els[i];
-				//el.href = "javascript:showChooser('../components/jnj_ImpactedSiteChooserFS.jsp?targetLocation=popup&selection=multiple&HelpMarker=emxhelpsearch',700,600)";
-				var parElement = el.parentElement.parentElement;
-				var anchor = document.createElement("a");
-				anchor.setAttribute("href", "javascript:showChooser('../components/jnj_ImpactedSiteChooserFS.jsp?targetLocation=popup&selection=multiple&HelpMarker=emxhelpsearch',700,600)");
-				var ClearText = document.createTextNode("Clear");
-				anchor.appendChild(ClearText);
-				parElement.appendChild(anchor);
-		}
-
-		//AATL-23531 -- START
-		//alert("In emxCPNValidation::editImpactedSite");
-		if (document.getElementById("calc_Marketing Company(s)") != null) {
-			if (document.getElementById("calc_Marketing Company(s)").childNodes[0].className == "label") {
-				document.getElementById("calc_Marketing Company(s)").childNodes[0].className = "labelRequired";
-				var mcText = document.getElementById("calc_Marketing Company(s)").childNodes[0].innerHTML;
-				//document.getElementById("calc_Marketing Company(s)").childNodes[1].innerHTML = "<span class='label' style=\"font:15px/18px Arial, Helvetica, sans-serif\"><i>[Auto populated from MC in Impacted Site(s) list]</i></span>";
-				document.getElementById("calc_Marketing Company(s)").childNodes[1].innerHTML = "<span style=\"color:grey;font:15px/18px Arial, Helvetica, sans-serif\"><i><%=strMCFieldMsg%></i></span>";
-			}
-			if (document.getElementById("calc_Marketing Company(s)").childNodes[1].className == "label") {
-				var mcText = document.getElementById("calc_Marketing Company(s)").childNodes[1].innerHTML;
-				document.getElementById("calc_Marketing Company(s)").childNodes[1].className = "labelRequired";
-				//document.getElementById("calc_Marketing Company(s)").childNodes[1].innerHTML = mcText + "<span class='label' style=\"font:15px/18px Arial, Helvetica, sans-serif\"><i>[Auto populated from MC in Impacted Site(s) list]</i></span>";
-				document.getElementById("calc_Marketing Company(s)").childNodes[1].innerHTML = mcText + "<span style=\"color:grey;font:15px/18px Arial, Helvetica, sans-serif\"><i><%=strMCFieldMsg%></i></span>";
-			}
-		}
-		//AATL-23531 -- END
-
+		$('[name="DesignResponsibilityDisplay"]').val("<%=sCTXcompanyName %>");
+		$('[name="DesignResponsibility"]').val("<%=sCTXcompanyName %>");
+		$('[name="DesignResponsibilityOID"]').val("<%=sCTXcompanyId %>");
 	}
-//Added  for AATL-24312 for removal of Impacted Site --- ENDS
-
-//Added for AATL-25374	by JnJ Internal Dev Team	-- STARTS
-function regClassChecks()
-	{
-		// alert('regClassChecks');
-		//added for AATL-28431 - Kenvue Release 1 - start
-		var foundRegClass = false;
-		var regListStr = "<%=sRegClassVForBatteryMandate%>";
-		var regList = regListStr.split("|");
+//Added for 16629-End
+//Added for 18522-Start
+	function populateSegement() {
 		
-		//AATL-29662 - start
-		var batteryPresent = true;
-		
-		if (document.getElementById("calc_kvAreBatteriesIncluded") == null || document.getElementById("calc_kvAreBatteriesRequired") == null)
-		{
-			batteryPresent = false;
-		}
-		// alert("regClassChecks... batteryPresent: "+batteryPresent);
-		//AATL-29662 - end
-		//added for AATL-28431 - Kenvue Release 1 - end
-		
-		if (document.getElementsByName("Regulatory ClassificationfieldValue")[0]!= 'undefined' && document.getElementsByName("Regulatory ClassificationfieldValue")[0]!= null) {
-		var str = document.getElementsByName("Regulatory ClassificationfieldValue")[0].value;
-		//added for AATL-28431 - Kenvue Release 1 - start
-		
-		var eachReg = str;
-		for (var eachMRegIndex = 0; eachMRegIndex< regList.length; eachMRegIndex++) {
-			var eachMReg = regList[eachMRegIndex];
-			if(eachMReg==eachReg && foundRegClass==false)
-			{
-				foundRegClass=true;
-			}
-		}
-		//added for AATL-28431 - Kenvue Release 1 - end
-		}
-		if (str != null && str.indexOf("Drug") !== -1) {
-			//document.getElementById("calc_Product Dosage Strength").childNodes[0].className = "labelRequired";
-			document.getElementById("calc_Active Ingredients").childNodes[0].className = "labelRequired";
-			//added for AATL-28431 - Kenvue Release 1 - Start
-			if(batteryPresent == true)  //AATL-29662
-			{
-				// if (str != null && str.indexOf("Medical Device") !== -1) 
-				if (str != null && foundRegClass==true) {
-					document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-					document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-				}
-			}
-			//added for AATL-28431 - Kenvue Release 1 - End
-		}
-		//added for AATL-28431 - Kenvue Release 1 - Start
-		if(batteryPresent == true)  //AATL-29662
-		{
-			// if (str != null && str.indexOf("Medical Device") !== -1) 
-			if (str != null && foundRegClass==true) {
-				document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-				document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-			}
-		}
-		//added for AATL-28431 - Kenvue Release 1 - End
-
-		var activeIngTextBox = document.getElementById("Active Ingredients");
-		if (activeIngTextBox != null) {
-			activeIngTextBox.cols = 10;
-		}
-
-		if (<%=bomContainsFD%> == true) { //show RM chooser only if there is FD in BOM.
-
-			activeIngTextBox.readOnly = true;
-			activeIngTextBox.style.width = "600px";
-
-			var input = document.createElement("input");
-        		input.type = "button";
-			//var newel = document.createElement("button");
-			input.value = "...";
-			input.name = "btnRMChooser";
-			var parElement = activeIngTextBox.parentElement;
-			//parElement.setAttribute("style","white-space: nowrap;");
-
-			parElement.appendChild(input);
-			input.onclick=function(){showChooser('../components/jnj_RMChooserFS.jsp?targetLocation=popup&selection=multiple&HelpMarker=emxhelpsearch&objectId=<%=strObjId%>',700,600);}
-			var anchor = document.createElement("a");
-			var ClearText = document.createTextNode("Clear");
-			anchor.setAttribute("href", "javascript:basicClear('Active Ingredients');basicClear('Active IngredientsfieldValue');");
-			anchor.appendChild(ClearText);
-			parElement.appendChild(anchor);
-			parElement.appendChild(anchor);
-		}
-			//Add change handler to Reg Class
-
-			var RegClassEle = document.getElementById("Regulatory ClassificationId");
-			// alert("1st value ... calling updateActiveIngrClass");
-			if (RegClassEle != null) {
-			// alert("1st value ... calling updateActiveIngrClass");
-			RegClassEle.onchange = function(){updateActiveIngrClass(RegClassEle.value);}
-			
-			}
-
-			var RegClassEle;
-			var rcList = document.querySelectorAll('[id^="Regulatory Classification"]');
-			for (i = 0; i < rcList.length; i++) {
-				if (rcList[i].tagName == "SELECT") {
-					// alert("adding..calling updateActiveIngrClass1");
-					RegClassEle = rcList[i];
-					//alert(RegClassEle.id);
-					
-					RegClassEle.onchange = function(){updateActiveIngrClass1(RegClassEle.id);}
-					
-					//RegClassEle.addEventListener("change", function(){updateActiveIngrClass(RegClassEle.value);});
-				}
-			}
-
+		$('[name="SegementDisplay"]').val("<%=sSegement %>");
+		$('[name="Segement"]').val("<%=sSegement %>");
+		$('[name="SegementOID"]').val("<%=sCTXcompanyId %>");
+		var vSegement= document.emxCreateForm.elements['Segement'];
+		vSegement.readOnly = true;
 	}
+//Added for 18522-End
+function showPDRevision(){
+   	emxFormReloadField("Revision");
+}
+  //IR-416225- Making "Design Responsibility" field non editable
+function changeHandlerForDR(){
+basicClear('ChangeTemplate');
+basicClear('CO');
+	emxFormReloadField("OwningRegion");
 
-function updateActiveIngrClass1()
+}
+
+function changeHandlerForStatus(){
+	emxFormReloadField("ExpirationDate");
+	changeExpirationDateVisibility(true);
+}
+
+function changeHandlerForCO(){
+var CTOID 	= document.getElementsByName('ChangeTemplateOID')[0].value;
+var changeTemplate 	= document.getElementsByName('ChangeTemplate')[0].value;
+if(CTOID == "" || changeTemplate == "")
 {
-	// alert("in updateActiveIngrClass1...next value");
-	var rcList = document.querySelectorAll('[id^="Regulatory Classification"]');
-	var i;
-	var required = false;
-	//added for AATL-28431 - Kenvue Release 1 - start
-	var returnValue = false;
-	var BatteryReturnValue = false; 
-	var foundRegClass = false;
-	var regListStr = "<%=sRegClassVForBatteryMandate%>";
-	var regList = regListStr.split("|");
-	// alert("in updateActiveIngrClass1... rcList.length: "+rcList.length);
-	
-	//AATL-29662-start
-	var batteryPresent = true;
-	
-	if (document.getElementById("calc_kvAreBatteriesIncluded") == null || document.getElementById("calc_kvAreBatteriesRequired") == null)
-	{
-		batteryPresent = false;
-	}
-	// alert("updateActiveIngrClass1... batteryPresent: "+batteryPresent);
-	//AATL-29662 -end
-	//added for AATL-28431 - Kenvue Release 1 - end
-		
-	for (i = 0; i < rcList.length; i++) {
-		// alert("in for... rcList[i].value: "+rcList[i].value);
-		if (rcList[i].tagName == "SELECT") {
-			//added for AATL-28431 - Kenvue Release 1 - start
-			if(returnValue == false)
-				document.getElementById("calc_Active Ingredients").childNodes[0].className = "label";
-			
-			// alert("updateActiveIngrClass1... Active label set... ");
-			if(batteryPresent==true) //AATL-29662
-			{
-				if(BatteryReturnValue == false)
-				{
-					document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "label";
-					document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "label";
-				}
-			}
-			//added for AATL-28431 - Kenvue Release 1 - end
-			//modified for AATL-28431 - Kenvue Release 1 - start
-				
-			if (rcList[i].value != null && rcList[i].value != "" ) {
-				//modified for AATL-28431 - Kenvue Release 1 - end
-				//added for AATL-28431 - Kenvue Release 1 - start
-				var eachReg = rcList[i].value;
-				for (var eachMRegIndex = 0; eachMRegIndex< regList.length; eachMRegIndex++) {
-					var eachMReg = regList[eachMRegIndex];
-					if(eachMReg==eachReg && foundRegClass==false)
-					{
-						foundRegClass=true;
-					}
-				}
-				
-				if(rcList[i].value.indexOf("Drug") !== -1)
-				{
-					returnValue = true;
-					//added for AATL-28431 - Kenvue Release 1 - end
-					document.getElementById("calc_Active Ingredients").childNodes[0].className = "labelRequired";
-					
-				}
-					
-				//added for AATL-28431 - Kenvue Release 1 - start
-				
-				if(batteryPresent == true) //AATL-29662
-				{
-					// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Medical Device") !== -1) {
-				
-				
-					if(foundRegClass == true)
-					{
-						// alert("updateActiveIngrClass1... making labelReq...");
-						document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-						document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-						BatteryReturnValue = true;
-					}
-					// }
-				}
-				if(returnValue == true && batteryPresent == false)   //BatteryReturnValue==true
-				// if(returnValue == true && BatteryReturnValue==true)
-				{
-					// alert("in updateActiveIngrClass1... return... for "+rcList[i].value);
-					return;
-				} 
-				else if((batteryPresent==true && BatteryReturnValue==true) && returnValue==true)
-				{
-					// alert("in updateActiveIngrClass1... 2. return... for "+rcList[i].value);
-					return;
-				}
-				//added for AATL-28431 - Kenvue Release 1 - end
-				//return;  //commented for AATL-28431 - Kenvue Release 1
-			}
-			//added for AATL-28431 - Kenvue Release 1 - start
-			if(batteryPresent==true) //AATL-29662
-			{
-				// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Medical Device") !== -1) 
-				if (rcList[i].value != null && rcList[i].value != "" && foundRegClass==true) {
-					// alert("updateActiveIngrClass1... 2. making labelReq...");
-					document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-					document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-					BatteryReturnValue = true;
-					//return;
-				}
-			}
-			//added for AATL-28431 - Kenvue Release 1 - end
-		}
-	}
-	//added for AATL-28431 - Kenvue Release 1 - start
-	if(returnValue==true || (batteryPresent==true && BatteryReturnValue==true)) //AATL-29662
-	// if(returnValue==true || (BatteryReturnValue==true))
-	{
-		// alert("in updateActiveIngrClass1... return... 1. at last ");
-		return;
-	}
-	//added for AATL-28431 - Kenvue Release 1 - end
-	
-	document.getElementById("calc_Active Ingredients").childNodes[0].className = "label";
-	
-	//added for AATL-28431 - Kenvue Release 1 - start
-	if(batteryPresent==true) //AATL-29662
-	{
-		document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "label";
-		document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "label";
-	}
-	//added for AATL-28431 - Kenvue Release 1 - end
+basicClear('CO');
+}
+else
+{
+       document.forms[0]['CO'].value="CreateNew";
+       document.forms[0]['CODisplay'].value="<xss:encodeForJavaScript><%=CPNUIUtil.getProperty(context, "emxCPN.DefaultCO.CreateNew", context.getSession().getLanguage()) %></xss:encodeForJavaScript>";
+       document.forms[0]['COOID'].value="CreateNew";
+ }
 }
 
+function changeHandlerForTemplate(){
+	changeImpactedSitelabel();
+var selTemplate = document.emxCreateForm.elements['TemplateId'];
+if(selTemplate.options[selTemplate.selectedIndex].value!="")
+	selTemplate.setAttribute("title",selTemplate.options[selTemplate.selectedIndex].getAttribute("title"));
+else
+	selTemplate.setAttribute("title","Template");
+    	emxFormReloadField("TestMethodClassification");
+		emxFormReloadField("TemplateDescription");
+		disableRenderLangBasedOnTemplate();
+    }
 
-function updateActiveIngrClass(val)
+	function changeHandlerForTemplateInXSE(){
+var selTemplate = document.emxCreateForm.elements['TemplateId'];
+if(selTemplate.options[selTemplate.selectedIndex].value!="")
+	selTemplate.setAttribute("title",selTemplate.options[selTemplate.selectedIndex].getAttribute("title"));
+else
+	selTemplate.setAttribute("title","Template");
+    	emxFormReloadField("TemplateDescription");
+    }
+	
+	function changeImpactedSitelabel()
 	{
-		// alert("in ..<updateActiveIngrClass>");
-		var rcList = document.querySelectorAll('[id^="Regulatory Classification"]');
+		var selTemplate = document.emxCreateForm.elements['TemplateId'];
+		var strName = selTemplate.options[selTemplate.selectedIndex].text;
+		var excludeList = "<%=strImpactedSiteExclusionList%>";
+
 		var i;
-		var required = false;
-		//added for AATL-28431 - Kenvue Release 1 - start
-		var returnValue = false; 
-		var BatteryReturnValue = false; 
-		var foundRegClass = false;
-		var regListStr = "<%=sRegClassVForBatteryMandate%>";
-		var regList = regListStr.split("|");
-		// alert("in updateActiveIngrClass... rcList.length: "+rcList.length);
-		//AATL-29662 -start
-		var batteryPresent = true;
-		
-		if (document.getElementById("calc_kvAreBatteriesIncluded") == null || document.getElementById("calc_kvAreBatteriesRequired") == null)
-		{
-			batteryPresent = false;
-		}
-		// alert("in updateActiveIngrClass... batteryPresent: "+batteryPresent);
-		//AATL-29662- end
-		//added for AATL-28431 - Kenvue Release 1 - end
-		for (i = 0; i < rcList.length; i++) {
-			// alert("in updateActiveIngrClass... rcList[i].value: "+rcList[i].value);
-			// alert("in updateActiveIngrClass... rcList[i].tagName: "+rcList[i].tagName);
-			if (rcList[i].tagName == "SELECT") {
-				//added for AATL-28431 - Kenvue Release 1 - start
-				// alert("in updateActiveIngrClass... in select....");
-				if(returnValue == false)
-				{
-					document.getElementById("calc_Active Ingredients").childNodes[0].className = "label";
-				}
-				
-				if(batteryPresent == true) //AATL-29662
-				{
-					if(BatteryReturnValue == false)
-					{
-						document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "label";
-						document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "label";
-					}
-				}
-				//added for AATL-28431 - Kenvue Release 1 - end
-						
-				// alert("update1 select");
-				//modified for AATL-28431 - Kenvue Release 1 - start
-				// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Drug") !== -1) 
-				if (rcList[i].value != null && rcList[i].value != "") {
-					//modified for AATL-28431 - Kenvue Release 1 - end
-					//added for AATL-28431 - Kenvue Release 1 - start
-					if(rcList[i].value.indexOf("Drug") !== -1)
-					{
-						returnValue = true;
-						//added for AATL-28431 - Kenvue Release 1 - end
-						document.getElementById("calc_Active Ingredients").childNodes[0].className = "labelRequired";
-					}
-					// alert("drug check done");	
-					//added for AATL-28431 - Kenvue Release 1 - start
-					if(batteryPresent == true) //AATL-29662
-					{
-						// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Medical Device") !== -1) {
-						var eachReg = rcList[i].value;
-						// alert("before starting MedDevice check... eachReg: "+eachReg);
-						for (var eachMRegIndex = 0; eachMRegIndex< regList.length; eachMRegIndex++) {
-							var eachMReg = regList[eachMRegIndex];
-							// alert("started MedDevice check... eachMReg: "+eachMReg);
-							// alert("started MedDevice check... foundRegClass: "+foundRegClass);
-							if(eachMReg == eachReg && foundRegClass == false )
-							{
-								// alert("started MedDevice check... found...: "+eachMReg);
-								foundRegClass=true;
-							}
-						}
-						// alert("medDevice check done.. foundRegClass:"+foundRegClass);
-						if(	foundRegClass==true)
-						{
-							// alert("updateActiveIngrClass... 3. making labelReq...");
-							document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-							document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-							BatteryReturnValue = true;
-						}
-					}
-				// }
-					if(batteryPresent== false) //AATL-29662
-					{
-						if(returnValue==true) //BatteryReturnValue==true)
-						// if(returnValue==true && BatteryReturnValue==true)
-						{
-							// alert("in updateActiveIngrClass... 3. return... for "+rcList[i].value);
-							return;
-						} 
-					} 
-					else
-					{
-						if(BatteryReturnValue == true && returnValue==true)
-						{
-							// alert("in updateActiveIngrClass... 4. return...for "+rcList[i].value);
-							return;
-						}
-					}
-					//added for AATL-28431 - Kenvue Release 1 - end
-					//return;  //commented for AATL-28431 - Kenvue Release 1
-				}
-				//added for AATL-28431 - Kenvue Release 1 - start
-				
-				if(batteryPresent == true) //AATL-29662
-				{
-					// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Medical Device") !== -1) 
-					if (rcList[i].value != null && rcList[i].value != "" && foundRegClass==true) {
-						// alert("updateActiveIngrClass... 4. making labelReq...");
-						document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "labelRequired";
-						document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "labelRequired";
-						BatteryReturnValue = true;
-						
-					}
-				}
-				//added for AATL-28431 - Kenvue Release 1 - end
-			}
-		}
-		//added for AATL-28431 - Kenvue Release 1 - start
-		if(returnValue==true || (batteryPresent == true && BatteryReturnValue==true)) //AATL-29662
-		// if(returnValue==true || (BatteryReturnValue==true))
-		{
-			// alert("in updateActiveIngrClass... return... 2. at last ");
-			return;
-		}
-		//added for AATL-28431 - Kenvue Release 1 - end
-				
-		document.getElementById("calc_Active Ingredients").childNodes[0].className = "label";
-		
-		//added for AATL-28431 - Kenvue Release 1 - start
-		if(batteryPresent == true) //AATL-29662
-		{
-			document.getElementById("calc_kvAreBatteriesIncluded").childNodes[0].className = "label";
-			document.getElementById("calc_kvAreBatteriesRequired").childNodes[0].className = "label";
-		}
-		//added for AATL-28431 - Kenvue Release 1 - end
-	}
-function checkActiveIngredients() {		//called from Validate setting of TemplateView web form for Reg Class field
-	// alert("in checkActiveIngredients");
-    var rcList = document.querySelectorAll('[id^="Regulatory Classification"]');
-    var i;
-    var required = false;
-	//added for AATL-28431 - Kenvue Release 1 - start
-    var BatteryRequired = false; 
-	var returnValue ;  
-	var foundRegClass = false;	
-	var regListStr = "<%=sRegClassVForBatteryMandate%>";
-	// alert("in checkActiveIngredients... regListStr: "+regListStr);
-	var regList = regListStr.split("|");
-	// alert("in checkActiveIngredients... rcList.length: "+rcList.length);
-	
-	//AATL-29662 -start
-	var batteryPresent = true;
-	
-	if (document.getElementById("calc_kvAreBatteriesIncluded") == null || document.getElementById("calc_kvAreBatteriesRequired") == null)
-	{
-		batteryPresent = false;
-	}
-	// alert("checkActiveIngredients... batteryPresent: "+batteryPresent);
-	//AATL-29662 -end
-	//added for AATL-28431 - Kenvue Release 1- end
-	for (i = 0; i < rcList.length; i++) {
-		if (rcList[i].tagName == "SELECT") {
-			if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Drug") !== -1) {
-				required = true;
-			}
-			//added for AATL-28431 - Kenvue R elease 1 - start
-			if(batteryPresent==true) //AATL-29662
+		var array = excludeList.split(',');
+		var result_style = document.getElementById('calc_Impacted Site');
+		var result_style_height = result_style.style.height;
+
+		var found = "no";
+		for(i = 0; i<array.length; i++) {
+			var option1 = array[i];
+			if(strName == array[i])
 			{
-				// if (rcList[i].value != null && rcList[i].value != "" && rcList[i].value.indexOf("Medical Device") !== -1) 
-				if (rcList[i].value != null && rcList[i].value != "") {
-					var eachReg = rcList[i].value;
-					for (var eachMRegIndex = 0; eachMRegIndex< regList.length; eachMRegIndex++) {
-						var eachMReg = regList[eachMRegIndex];
-						if(eachMReg==eachReg && foundRegClass==false)
-						{
-							foundRegClass=true;
-						}
-					}
-					if(foundRegClass==true) 
-					{
-						BatteryRequired = true;
-					}
-				}
+				document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabel";
+				result_style.style.display='none';
+				document.getElementsByName('Impacted SiteDisplay')[0].value="";
+				document.getElementsByName('Impacted Site')[0].value="";
+				found = "yes";
+				break;
 			}
-			//added for AATL-28431 - Kenvue Release 1 - end
 		}
-
-	}
-	var aival = document.getElementById("Active Ingredients").value;
-	if (aival !== null && aival == "" && required == true) {
-		alert("Must enter a valid value for Active Ingredients!");
-		
-		//modified for AATL-28431 - Kenvue Release 1 - start
-		// return false;
-		returnValue = false;
-		//modified for AATL-28431 - Kenvue Release 1 - end
-		
-	} 
-	//else return true; //commented for AATL-28431 - Kenvue Release 1
-	
-	//added for AATL-28431 - Kenvue Release 1 - start
-	if(batteryPresent==true)  //AATL-29662
-	{
-		var aivalIncluded = document.getElementById("kvAreBatteriesIncludedId").value;
-		var aivalRequired = document.getElementById("kvAreBatteriesRequiredId").value;
-		
-		if(aivalRequired !== null && aivalRequired == "" && BatteryRequired == true)
+		if ( found == "no" )
 		{
-			alert("Must enter a valid value for 'Are Batteries Required?'");
-			returnValue = false;
+			result_style.style.display='';
+			document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabelRequired";
 		}
-		if (aivalIncluded !== null && aivalIncluded == "" && BatteryRequired == true) {
-			alert("Must enter a valid value for 'Are Batteries Included?'");
-			returnValue = false;
-		} 
 	}
-	if(returnValue == false)
-		return false;
-	else 
-		return true;
+
+	function disableRenderLangBasedOnTemplate(){
+	var tempId = document.getElementById("TemplateId").value;
+	var rendLang = document.getElementById("Render LanguageId");
+	if(rendLang == null){
+		rendLang = document.getElementById("RenderLanguageId");
+	}
+	var prevObj = document.getElementsByName("objectId")[0];
+	var objectId = "";
+	if(prevObj !== undefined && prevObj !== null && prevObj !== ""){
+	objectId = prevObj.value;
+	}
+	if(tempId!==null && tempId!==""){
+   	var params = new Object();
+	params.templateId=tempId;
+	params.prevObjectId = objectId;
+	if(objectId!==null && objectId!=="" && objectId != undefined){
+	params.prevObjectId = objectId;
+	}
+    var jsonObj = JSON.stringify(params);
+    var finalURL = "../cpn/emxCPNPDAjax.jsp?mode=ClaimedValues";
+
+    $.ajax({
+			dataType: "json",
+            url: finalURL,
+            type: "POST",
+            data: jsonObj,
+            contentType:"json",
+            success: function (result) {
+                    var serverResponse=result.serverResponse;
+                    var isClaimedAttr=result.isClaimed;
+           			if(isClaimedAttr){
+            			serverResponse = serverResponse.replace(/\s/g,"");
+            			rendLang.value = serverResponse;
+            			if(rendLang.value=="") {
+            				serverResponse = serverResponse.replace(/\s/g,"_");
+            				rendLang.value = serverResponse;
+            			}
+            			  var lngth = rendLang.options.length;
+            			  for(var i=0; i<lngth; i++){
+	            			  if(rendLang.options[i].value !== serverResponse){
+	            			  	rendLang.setAttribute("readonly","readonly");
+	            			  	rendLang.options[i].disabled=true;
+	            			  }
+            			}
+            		}else{
+            		rendLang.removeAttribute("readonly");
+	            			var lngth = rendLang.options.length;
+	            			for(var i=0; i<lngth; i++){
+	            			  rendLang.removeAttribute("readonly");
+	            			  	rendLang.options[i].disabled=false;
+	            			}
+	            			rendLang.value = serverResponse;
+            		}
+               	}
+           });
+	}
+	}
+
+	function showPDTs(){
+		emxFormReloadField("Policy");
+		<!-- //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN -->
+		emxFormReloadField("ExpirationDate");
+		<!--changeExpirationDateVisibility(true);-->
+		changeExpirationDateVisibilityBasedonStage(true);
+		<!-- //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END -->
+		<!-- //added by TCS for TRU-11226 : START -->
+    	emxFormReloadField("Template");
+    	showTemplateDescription();
+    	<!-- changeCOLabel(); -->
+
+
+    }
 	
-	//added for AATL-28431 - Kenvue Release 1 - end
-}
-
-//Added for AATL-25374	by JnJ Internal Dev Team	-- ENDS
-//Added for User Story AATL-22186 -- START
-function showRelatedPolicyValue() {
-	emxFormReloadField("Policy");
-}
-function checkChangeActionConnected() {
-	if("<%=bIsChangeConnected%>" === "true") {
-		alert("<%=EnoviaResourceBundle.getProperty(context, "emxCPNStringResource", context.getLocale(), "emxCPN.Common.ChangeStageAlert.ChangeActionCheck")%>");
-		top.window.close();
-	}
-}
-//Added for User Story AATL-22186 -- END
-//Added for User Story AATL-24510 -- START
-String.prototype.replaceAll = function(search, replacement) {
-    var target = this;
-    return target.split(search).join(replacement);
-};
-  String.prototype.startsWith = function(searchString, position) {
-    position = position || 0;
-    return this.indexOf(searchString, position) === position;
-  };
-var interVal = setInterval(findCalAnchor, 500);
-var waitTime = 0;
-function findCalAnchor(){
-	waitTime += 500;
-	var allAnchorTag = getDateChooser("javascript:showCalendar");
-	for (var aItr = 0; aItr < allAnchorTag.length; aItr++) {
-		//alert("Found");
-		clearInterval(interVal);
-		var splitHref = allAnchorTag[aItr].href.split(",");
-		var dateField = trim(splitHref[1]);
-		dateField = dateField.replaceAll("'", "");
-		var allEndTag = getDateChooser("javascript:moveToEndDate('"+dateField+"')");
-		//alert(calAnchorTag.id);
-		if (allEndTag.length === 0) {
-			var aEndDate = document.createElement('a');
-			aEndDate.href = "javascript:moveToEndDate('"+dateField+"')";
-			aEndDate.title = "31 Dec 9999";
-			aEndDate.style.visibility = allAnchorTag[aItr].style.visibility;
-			var imgEndDate = document.createElement("img");
-			imgEndDate.alt = "31 Dec 9999";
-			imgEndDate.src = "../common/images/31Dec.png";
-			imgEndDate.border = "0";
-			imgEndDate.style.padding = "0px 0px 0px 3px";
-			aEndDate.appendChild(imgEndDate);
-			allAnchorTag[aItr].parentNode.insertBefore(aEndDate, allAnchorTag[aItr].nextSibling);
-		}
-	}
-	if(waitTime > 3000){
-		clearInterval(interVal);
-	}
-}
-function getDateChooser(searchStr){
-	var finalTag = new Array();
-	if(searchStr==null) {
-		return finalTag;
-	}
-	var allAnchorTag = document.getElementsByTagName('a');
-	//alert(allAnchorTag.length);
-	for (var aItr = 0; aItr < allAnchorTag.length; aItr++) {
-		//alert(allAnchorTag[aItr].href);
-		if(allAnchorTag[aItr].getAttribute("href") != null){
-			var hrefStr = allAnchorTag[aItr].getAttribute("href");
-			if(hrefStr.startsWith(searchStr)){
-				finalTag.push(allAnchorTag[aItr]);
-			}
-		}
-	}
-	return finalTag;
-}
-function moveToEndDate(dateField){
-	var dEndDate = new Date();
-	dEndDate.setFullYear(9999, 11, 31);
-	dEndDate.setHours(0);
-	dEndDate.setMinutes(0);
-	dEndDate.setSeconds(0);
-	var strURL = URL_GET_CALENDAR_SELECT;
-	strURL = emxUICore.addURLParam(strURL, "day=" + dEndDate.getDate());
-	strURL = emxUICore.addURLParam(strURL, "mon=" + (dEndDate.getMonth()+1));
-	strURL = emxUICore.addURLParam(strURL, "year=" + dEndDate.getFullYear());
-	var strData = emxUICore.getData(strURL);
-	if(document.getElementById(dateField) != null) {
-		document.getElementById(dateField).value = strData;
-	}
-	if(document.getElementById(dateField+"AmPm") != null) {
-		document.getElementById(dateField+"AmPm").value = dEndDate.getTime() + 12 * 60 * 60 * 1000;
-	}
-	if(document.getElementsByName(dateField+"_msvalue")[0] != null) {
-		document.getElementsByName(dateField+"_msvalue")[0].value = dEndDate.getTime() + 12 * 60 * 60 * 1000;
-	}
-}
-//Added for User Story AATL-24510 -- END
-//Added for AATL-25903	by JnJ Internal Dev Team	-- STARTS
-function expDateCheck()  {
-	//alert('expDateCheck' + document.editDataForm.elements['Product Management'].value);
-	//alert('expDateCheck' + document.editDataForm.elements['Expiration Date'].value);
-	//alert('expDateCheck' + document.getElementById('calc_Revision').childNodes[1].innerHTML);
-	var productManagementValue = document.editDataForm.elements['Product Management'].value;
-
-	var expirationDateValue = document.editDataForm.elements['Expiration Date'].value;
-	var revString = document.getElementById('calc_Revision').childNodes[1].innerHTML;
-
-	var stageString = document.getElementById('calc_Release Phase').childNodes[1].innerHTML;
-
-	var isFirstCommercial = "<%=strIsFirstCommercial%>";
 	
-	if ((revString.indexOf('1')>=0 || isFirstCommercial.indexOf('true') >=0) && (stageString.indexOf('Commercial')>=0)) {
-		//alert('applying PM and Exp Checks');
-		if (productManagementValue.indexOf('Trade Customization') >=0) {
-			//alert('PM is TC');
-			if (expirationDateValue.indexOf('9999') >= 0) {
-				//alert(expirationDateValue.indexOf('9999'));
-				var message = "<%=strEnsureNonDefaultExpDateMessage%>";
-				alert(message);
-				return false;
-				}
-			} else {
-
-				//alert('PM is not TC');
-				if (expirationDateValue.indexOf('9999') < 0) {
-					//alert(expirationDateValue.indexOf('9999'));
-					var message = "<%=strEnsureDefaultExpDateMessage%>";
-					alert(message);
-					return false;
-				}
-			}
-
-
-		}
-		return true;
-}
-//AAded for AATL-23531 by JnJ Internal Dev Team -- STARTS
-
-function checkForMarketingCompany() {
-	if (checkForValidMarkeingCompanys() == false) {
-		return false;
-	}
-	var impactedSitesvalue = document.editDataForm.elements['Impacted Site'].value;
-
-	if ("<%=sType%>" == "Finished Good") {
-		//alert("checking for mc" + impactedSitesvalue);
-		if (impactedSitesvalue.indexOf("MC-") == -1) {
-			alert("<%=strMCRequired%>");
+	
+	function validateImpactedSites()
+	{
+		//Added for AATL-23531 -- STARTS
+		if (checkForValidMarkeingCompanys() == false) {
 			return false;
 		}
+		//Added for AATL-23531 -- ENDS
+		var selTemplate = document.emxCreateForm.elements['TemplateId'];
+		var strName = selTemplate.options[selTemplate.selectedIndex].text;
+		var excludeList = "<%=strImpactedSiteExclusionList%>";
+
+		var i;
+		var array = excludeList.split(',');
+		var result_style = document.getElementById('calc_Impacted Site');
+		var found = "no";
+		for(i = 0; i<array.length; i++) {
+			var option1 = array[i];
+
+			if(strName == array[i])
+			{
+				found = "yes";
+				document.getElementsByName('Impacted SiteDisplay')[0].value="";
+				document.getElementsByName('Impacted Site')[0].value="";
+				var val = document.getElementsByName('Impacted SiteDisplay')[0].value;
+				if( val=="" )
+				{
+				return true;
+				}
+				break;
+			}
+		}
+		if (found == "no")
+		{
+			var val=document.getElementsByName('Impacted SiteDisplay')[0].value;
+			if (val=="")
+			{
+			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.BlankImpactedSite")%>");
+			return false;
+			}
+			else
+			{
+			return true;
+			}
+		}
+
 	}
-	return true;
-}
+	
+	function checkForValidMarkeingCompanys() {
 
-function checkForValidMarkeingCompanys() {
-
-		var val=document.editDataForm.elements['Impacted Site'].value;
+		var val=document.getElementsByName('Impacted SiteDisplay')[0].value;
 		var mclov = "<%=mcCompanysLoV%>";
 		if (val != "") {
 			//alert(val);
@@ -1809,225 +493,426 @@ function checkForValidMarkeingCompanys() {
 				return true;
 			}
 		}
+	}
+     function changeExpirationDateVisibility(displayAlert)
+	 {
+	        var status= document.emxCreateForm.elements['Status'];
+	        if(status == null){
+	        	status = document.emxCreateForm.elements['status'];
+	        }
+	        var expirationDate= document.emxCreateForm.elements['ExpirationDate'];
+			<!-- XSSOK -->
+	        if (status.value != "<%=strSpecCategoryInterim%>" && status.value != "<%=strSpecCategoryExperimental%>" )
+	        {
+
+	            	var mssg = "<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.ExpirationDateIsNotEditableWhenPermanent")%>";
+	            	expirationDate.title = mssg;
+	            expirationDate.readOnly = true;
+	           expirationDate.nextSibling.style.visibility="hidden";
+	        } else
+	        {
+	        	expirationDate.title = $('label[for="ExpirationDate"]').get(0).innerHTML;
+	            expirationDate.disabled = false;
+	            expirationDate.nextSibling.style.visibility = "visible";
+
+	        }
+	    }
+
+ function changeCOLabel() {
+	var stage 	= '';
+	var canAttachECOtoPD	= true;
+	if(document.emxCreateForm.Stage)
+
+	{
+	canAttachECOtoPD = canAttachECO(document.emxCreateForm.Stage.value);
+	}
+	if(canAttachECOtoPD){
+		document.getElementById("calc_ChangeTemplate").childNodes[0].className = "labelRequired";
+		document.getElementById("calc_CO").childNodes[0].className = "labelRequired";
+	}else{
+		document.getElementById("calc_ChangeTemplate").childNodes[0].className = "label";
+		document.getElementById("calc_CO").childNodes[0].className = "label";
+	}
+}
+function canAttachECO(stage){
+	<%
+	String str = "";
+	itr = slStageListToConnectCO.iterator();
+	while(itr.hasNext()){
+		str = (String)itr.next();
+		//TO DO - need to check the issue with Internationalization of Stage attribute value as both display and used value are same
+		%>
+		<!-- XSSOK -->
+		if(stage!=null && stage!="" && (stage=='<%=str%>' || stage== '<%=strNotApplicableStage%>') ){
+			return true;
+	}
+	<%}%>
+	return false;
 }
 
+ function validateCT()
+ {
 
-//AAded for AATL-23531 by JnJ Internal Dev Team -- ENDS
-//Added for User Story AATL-26390 -- START
-function checkPositiveReal(fieldname){
-	var fieldname = "" ; 
-	if(!fieldname) {
-		fieldname=this;
+   	var CT 	= document.getElementsByName('ChangeTemplateOID')[0].value;
+ var canAttachECOtoPD = canAttachECO(document.emxCreateForm.Stage? document.emxCreateForm.Stage.value : "");
+
+
+	if(canAttachECOtoPD == true && (CT==null || CT==""))
+	{
+		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ChangeTemplate")%>");
+		return false;
+	}else{
+		return true;
+	}
+  }
+
+    // Utitliy method to check if null or empty string
+    // returns true if undefined, null, "", NaN is passed
+   function isNullOrEmpty(val) {
+        return !val;
+   }
+  function validateCO()
+ {
+   	var CO 	= $('input[name="CODisplay"]').val();
+   	var CT 	= $('input[name="ChangeTemplateDisplay"]').val();
+	var canAttachECOtoPD = canAttachECO(document.emxCreateForm.Stage? document.emxCreateForm.Stage.value : "");
+	if((!isNullOrEmpty(CT) || canAttachECOtoPD == true) && (isNullOrEmpty(CO)))
+	{
+		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.CO")%>");
+		return false;
+	}else{
+		return true;
+	}
+  }
+
+
+   function validateExpDate()
+    {
+    	var expDate = document.forms[0].ExpirationDate_msvalue.value;
+    	var status = document.forms[0].Status.value;
+    	expDate = new Date(parseInt(expDate));
+    	<!--  R420-IR-601604 -The time is set to zero to allow the current date to be set as Expiration Date. -->
+    	expDate.setHours(0,0,0,0);
+		var today = new Date();
+	    today.setHours(0,0,0,0);
+		if (today.getFullYear() < 1950)
+	    {
+	      today.setFullYear(expDate.getFullYear() + 100);
+	    }
+	    if (expDate.getFullYear()< 1950)
+	    {
+	        expDate.setFullYear(expDate.getFullYear() + 100);
+	    }
+		var numberOfDays = (Date.parse(expDate) - Date.parse(today))/86400000;
+		if(numberOfDays < 0)	{
+			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ExpirationDate")%>");
+			return false;
+		} else{
+			return true;
+		}
+    }
+
+function changeHandlerForCharacteristic(){
+document.getElementById('calc_Policy').getElementsByTagName('label')[0].innerHTML="<xss:encodeForJavaScript><%=CPNUIUtil.getProperty(context, "emxCPN.Common.Policy", context.getSession().getLanguage()) %></xss:encodeForJavaScript>";
+emxFormReloadField("table");
+
+}
+
+function validateCharacteristic(){
+
+var characteristicType=document.getElementById('CharacteristicTypeId').value;
+if(characteristicType==null || characteristicType=="")
+	{
+		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Characteristic.InvalidInputMsg")%>");
+		return false;
+	}else{
+		return true;
+	}
+	}
+function preProcessSharedTable(){
+document.getElementById('calc_Policy').getElementsByTagName('label')[0].innerHTML="<xss:encodeForJavaScript><%=CPNUIUtil.getProperty(context, "emxCPN.Common.Policy", context.getSession().getLanguage()) %></xss:encodeForJavaScript>";
+document.getElementById('PolicyId').options[1].setAttribute("selected","selected");
+emxFormReloadField("table");
+
+}
+
+function showTemplateDescription(){
+	var templateSelect = document.emxCreateForm.elements['TemplateId'];
+	var i,str;
+	var oid=new Array();
+	for(i=0;i<templateSelect.length;i++)
+	{
+
+	oid[i]=templateSelect.options[i].value;
+	}
+	var encodedPipeForURL = encodeURIComponent("|");   
+	var txt=oid.join(encodedPipeForURL);
+	var url="../cpn/emxCPNPDAjax.jsp";
+ 	url=url+"?selectedVal="+txt;
+	url=url+"&mode=templateDescription";
+	url=url+"&from=emxCreateForm";
+
+	var oXMLHTTP22 = emxUICore.createHttpRequest();
+	oXMLHTTP22.open("post", url, true);
+	var ResponseText = "";
+	oXMLHTTP22.onreadystatechange = function() {
+		if (oXMLHTTP22.readyState == 4) {
+			  ResponseText = oXMLHTTP22.responseText;
+			  var selTemplate = document.emxCreateForm.elements['TemplateId'];
+			  if(ResponseText != "") {
+				ResponseTextArray = ResponseText.split("|");
+				for(var i=0;i<ResponseTextArray.length;i++)
+				{
+						if(selTemplate.options[i] != undefined){
+						selTemplate.options[i].setAttribute("title",ResponseTextArray[i].trim());
+
+					}
+				}
+			}
+
+			if(selTemplate.options[selTemplate.selectedIndex].value!="")
+				selTemplate.setAttribute("title",selTemplate.options[selTemplate.selectedIndex].getAttribute("title"));
+			else
+				selTemplate.setAttribute("title","Template");
+		}
 	}
 
-	if( isNaN(fieldname.value) || fieldname.value <= 0 )
-	{
-		alert("<emxUtil:i18nScript localize='i18nId'>emxFramework.Alert.PositiveWeightGrammageValue</emxUtil:i18nScript>");
-		fieldname.focus();
+	oXMLHTTP22.send("");
+}
+
+  //UOM Management - start
+function reloadUOMField(){
+    emxFormReloadField("UOM");
+}
+//UOM Management - End
+//Same method is added in template Need to remove this method after validation
+function validateChangeOrder(){
+	var CO 	= $('input[name="ChangeOrderDisplay"]').val();
+	var CT 	= $('input[name="ChangeTemplateDisplay"]').val();
+	if( !isNullOrEmpty(CT.trim()) && (isNullOrEmpty(CO))) {
+		alert("<%=EnoviaResourceBundle.getProperty(context,"enoTemplateStringResource",context.getLocale(),"enoTemplate.ValidationErrorMessage.PleaseCheckValidECO")%>");
 		return false;
 	}
 	return true;
 }
-//Added for User Story AATL-26390 -- END
 
-//Added for AATL-25903	by JnJ Internal Dev Team	-- ENDS
-//FQ8 : IR-286008 : validation method for validating NoOfCopies filed in copy PD page - end
-     function reloadUOMField() {
-         emxFormReloadField("UOM");
-     }
-     
-     function downloadPDF(objectId, fileName) {
-    	 
-    	 var strURL = "../cpn/ENOGLSDownloadPDF.jsp";
-    	 var params = new Object();
-    	 params.objectId = objectId;
-		 params.fileName = fileName;
-		 params.action = "Download";
-		 
-	     var strData = JSON.stringify(params);
-    	 //var strData 
+//Added by Tarique for Bug Fix- Issue #7- Starts
+function generateChooserURLForImpactedSite(formField) {
+		 var formFieldName          = formField.name;
+        var actualFormFieldName    = formFieldName.substring(3);
+	 var displayFormFieldName   = actualFormFieldName + "Display";
+        var objForm                = document.forms[0];
+        var actualFormField        = objForm.elements[actualFormFieldName];
+	var displayFormField        = objForm.elements[displayFormFieldName];
+        var selValues              = actualFormField.value;
+	var displayValues           = displayFormField.value;
 
-    		if (isIE) {
+        if(selValues=="" || displayValues==""){
+            selValues="null";
+        } else {
+            selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
+        }
+         var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=JNJAEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";
+		 showChooser(URL,700,600);
+    }
+//Added by Tarique for Bug Fix- Issue #7- Ends
 
-    			ElapsedTimer.enter('getTextXMLDataPost' + ' ' + strURL + " " + strData);
+function validateUOMField()
+{
+	var UOMVal = document.emxCreateForm.UOM;
+	if(UOMVal)
+		return true;
+	else
+	{
+		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Alert.UOMValidation")%>");
+		return false;
+	}
+}
 
-    			if (typeof strURL != "string") {
-    				emxUICore.throwError("Required parameter strURL is null or not a string.");
-    			}
+function preProcessCreatePDForXSE(){
 
-    			var objHTTP = emxUICore.createHttpRequest();
-    			objHTTP.open("post", strURL, true);
-    			objHTTP.setRequestHeader("Content-type", "text/html");
-    			addSecureTokenHeader(objHTTP);
-    			objHTTP.responseType = 'blob';
-    			objHTTP.send(strData);
-
-    			objHTTP.onload = function(event) {
-    				if (objHTTP.status == 200) {
-    					var bb = new MSBlobBuilder();
-    					bb.append(objHTTP.response);
-    					var blob = bb.getBlob('application/pdf');
-    					var url = URL.createObjectURL(blob);
-    					var filename = objHTTP.getResponseHeader('Content-Disposition');
-    					filename = filename.substring(filename.indexOf("=") + 2,filename.lastIndexOf("\""));
-
-    					window.navigator.msSaveOrOpenBlob(blob, filename);
-
-    				} else {
-    					alert('Sorry, PDF was not generated');
-    				}
-    			};
-    		} else {
-    			var a = document.createElement('a');
-    			a.setAttribute('href', '#');
-    			a.setAttribute('id', 'sim');
-    			document.body.appendChild(a);
-
-    			ElapsedTimer.enter('getTextXMLDataPost' + ' ' + strURL + " " + strData);
-
-    			if (typeof strURL != "string") {
-    				emxUICore.throwError("Required parameter strURL is null or not a string.");
-    			}
-
-    			var objHTTP = emxUICore.createHttpRequest();
-    			objHTTP.open("post", strURL, true);
-    			objHTTP.setRequestHeader("Content-type", "text/html");
-    			addSecureTokenHeader(objHTTP);
-    			objHTTP.responseType = 'blob';
-
-    			objHTTP.onload = function(event) {
-    				if (objHTTP.status == 200) {
-    					var blob = new Blob([ objHTTP.response ], {
-    						type : 'application/pdf'
-    					});
-    					var url = URL.createObjectURL(blob);
-    					var link = document.querySelector('#sim');
-    					link.setAttribute('href', url);
-    					var filename = objHTTP.getResponseHeader('Content-Disposition');
-    					filename = filename.substring(filename.indexOf("=") + 2,filename.lastIndexOf("\""));
-    					filename = filename.replace("%c2%a0","");
-
-    					$('#sim').attr("download", filename);
-    					link.click();
-
-						} else {
-							alert('Sorry, PDF was not generated');
-						}
-					};
-					objHTTP.send(strData);
-					emxUICore.checkResponse(objHTTP);
-				}
-			}
-			function validateWorkUnderChange() {
-		
-			if($("input[name=ChangeControlled]").val()=='true' && $('input[name=WorkUnderOID]').val()==''){
-				alert("<emxUtil:i18nScript localize="i18nId">emxEngineeringCentral.Common.WorkUnderChangeRequired</emxUtil:i18nScript>");
-			}else{
-				return true;
-			}
-			}
-		
-	function onChangeWorkUnder(){
-	if($("input[name=WorkUnderOID]").val()!=""){
-		document.emxCreateForm.ChangeControlled.value = true;
-		document.emxCreateForm.ChangeControlled.checked = true;
-    	document.emxCreateForm.ChangeControlled.disabled = true;	
-	}else if($('input[name=WorkUnderOID]').val()==""){
-		document.emxCreateForm.ChangeControlled.value = false;
-		document.emxCreateForm.ChangeControlled.checked = false;
-    	document.emxCreateForm.ChangeControlled.disabled = false;
+	var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
+	if(typeSelected != null && typeSelected != ""){
+	 	emxFormReloadField("Template");
 	}
 
+	showTemplateDescription();
 }
-//Added for GCC-122124 - Grammage and Weight Units check fails for Packaging (AATL-29781)- Start
-function checkWeightGrammageUnit() {
-	var rcList = document.querySelectorAll('[id^="PC Weight or Grammage"]');
-	var pcUOM = document.getElementById("PC UOMId").value;
-	var i;
-	var returnValue;
-	var varIsCorrectWeightUOMSelected = true;
-	var varIsCorrectGrammageUOMSelected = true;
-	<%
-	String strWeightUOM = EnoviaResourceBundle.getProperty(context, "emxCPN", context.getLocale(), "emxCPN.PackagingComponent.UOM.Weight");
-	StringList slWeightUOMList = FrameworkUtil.split(strWeightUOM, "|");
-	String strGrammageUOM = EnoviaResourceBundle.getProperty(context, "emxCPN", context.getLocale(), "emxCPN.PackagingComponent.UOM.Grammage");
-	StringList slGrammageUOMList = FrameworkUtil.split(strGrammageUOM, "|");
-	%>
-	var rangeListGrammage = "<%=slGrammageUOMList%>";
-	rangeListGrammage = rangeListGrammage.replace('\[','');
-	rangeListGrammage = rangeListGrammage.replace('\]','');
-	var listGrammageUnits = rangeListGrammage.split(", ");
-	var rangeListWeight = "<%=slWeightUOMList%>";
-	rangeListWeight = rangeListWeight.replace('\[','');
-	rangeListWeight = rangeListWeight.replace('\]','');
-	var listWeightUnits = rangeListWeight.split(", ");
-	for (i = 0; i < rcList.length; i++) {
-		if (rcList[i].tagName == "SELECT") {
-			if (rcList[i].value != null && rcList[i].value != "") {
-				if ( rcList[i].value.indexOf("Grammage") != -1 && listGrammageUnits.indexOf(pcUOM)==-1 ) {
-					varIsCorrectGrammageUOMSelected = false;
+
+function generateChooserURLForImpactedSite(formField) {
+		 var formFieldName          = formField.name;
+        var actualFormFieldName    = formFieldName.substring(3);
+	 var displayFormFieldName   = actualFormFieldName + "Display";
+        var objForm                = document.forms[0];
+        var actualFormField        = objForm.elements[actualFormFieldName];
+	var displayFormField        = objForm.elements[displayFormFieldName];
+        var selValues              = actualFormField.value;
+	var displayValues           = displayFormField.value;
+
+        if(selValues=="" || displayValues==""){
+            selValues="null";
+        } else {
+            selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
+        }
+         var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=JNJAEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";
+		 showChooser(URL,700,600);
+    }
+
+		function validateImpactedSites()
+	{
+		//Added for AATL-23531 -- STARTS
+		if (checkForValidMarkeingCompanys() == false) {
+			return false;
+		}
+		//Added for AATL-23531 -- ENDS
+		var selTemplate = document.emxCreateForm.elements['TemplateId'];
+		var strName = selTemplate.options[selTemplate.selectedIndex].text;
+		var excludeList = "<%=strImpactedSiteExclusionList%>";
+
+		var i;
+		var array = excludeList.split(',');
+		var result_style = document.getElementById('calc_Impacted Site');
+		var found = "no";
+		for(i = 0; i<array.length; i++) {
+			var option1 = array[i];
+
+			if(strName == array[i])
+			{
+				found = "yes";
+				document.getElementsByName('Impacted SiteDisplay')[0].value="";
+				document.getElementsByName('Impacted Site')[0].value="";
+				var val = document.getElementsByName('Impacted SiteDisplay')[0].value;
+				if( val=="" )
+				{
+				return true;
 				}
-				if ( rcList[i].value.indexOf("Weight") != -1 && listWeightUnits.indexOf(pcUOM)==-1 ) {
-					varIsCorrectWeightUOMSelected = false;
-				}
+				break;
 			}
 		}
-	}
-	if (varIsCorrectGrammageUOMSelected==false) {
-		var GrammageUnits = rangeListGrammage.replaceAll(", ", "\n");
-		alert("<%=EnoviaResourceBundle.getProperty(context, "emxCPNStringResource", context.getLocale(), "emxCPN.PackagingComponent.Alert.GrammageUnitIncorrect")%>"+"\n"+GrammageUnits);
-		returnValue = false;
-	}
-	if(varIsCorrectWeightUOMSelected==false) {
-		var WeightUnits = rangeListWeight.replaceAll(", ", "\n");
-		alert("<%=EnoviaResourceBundle.getProperty(context, "emxCPNStringResource", context.getLocale(), "emxCPN.PackagingComponent.Alert.WeightUnitIncorrect")%>"+"\n"+WeightUnits);
-		returnValue = false;
+		if (found == "no")
+		{
+			var val=document.getElementsByName('Impacted SiteDisplay')[0].value;
+			if (val=="")
+			{
+			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.BlankImpactedSite")%>");
+			return false;
+			}
+			else
+			{
+			return true;
+			}
+		}
 
 	}
-	if(returnValue == false) {
-		return false;
-	} else {
+	
+	//Added for AATL-23635----Starts
+	function validateSpecTypesForRestrictedCS()
+	{
+		var typeName = document.getElementsByTagName("input");
+		for(i = 0; i<typeName.length; i++)
+		{
+			//Modified for UI translation
+			if (typeName[i].name == "TypeActual")
+			{
+				var specType = typeName[i].value;
+			}
+		}
+		var sRestType = "<%=strRestrictedType%>";
+		var sResttypeList = sRestType.split(",");
+		var isApplicable = false;
+		for(j = 0; j<sResttypeList.length; j++)
+		{
+			if (sResttypeList[j] == specType)
+			{
+				isApplicable = true;
+				break;
+			}
+		}
+
+
+
+			//alert(personCollabSpace);
+			if (isApplicable == true)
+			{
+				var sAssignedRestType = "<%=sRestrictedAssignment%>";
+				var sAssignedResttypeList = sAssignedRestType.split(",");
+				var hasAccess = false;
+				for(k = 0; k<sAssignedResttypeList.length; k++)
+				{
+					if (sAssignedResttypeList[k] == specType)
+					{
+						hasAccess = true;
+						break;
+					}
+				}
+				if (hasAccess == false) {
+					//Modified for UI translation
+					var specDisplay = document.emxCreateForm.elements['TypeActualDisplay'].value;
+					var alertmessage = "<%=EnoviaResourceBundle.getProperty(context,"enoTemplateStringResource",context.getLocale(),"enoTemplate.ValidationErrorMessage.FDandMWICreationInRestrictedCS")%>";
+					alertmessage = alertmessage.replace("<<sType>>", specDisplay);
+					document.emxCreateForm.elements['TypeActualDisplay'].value = "Select Type";
+					var collabMap = "<%=sCollabMap%>";
+					var collabMapList = collabMap.split("|");
+					var collabSpace = "";
+					for (itr1 = 0; itr1 < collabMapList.length; itr1++) {
+						var collabEntry = collabMapList[itr1].split(":");
+						if (collabEntry[0] == specType) {
+							collabSpace = collabEntry[1];
+						}
+					}
+					alertmessage = alertmessage.replace("<<sCollabSpace>>", collabSpace);
+					alert(alertmessage);
+					//alert("You do not have sufficient priviledges to create"+specType+"Specifications in " + "<%=strRestrictedCS%>"+ "Please change your security context accordingly");
+					//alert(specType+" "+"<%=EnoviaResourceBundle.getProperty(context,"enoTemplateStringResource",context.getLocale(),"enoTemplate.ValidationErrorMessage.FDandMWICreationInRestrictedCS")%>");
+					//alert("You need originator access in Consumer Restricted Collaborative Space to perform this action.");
+					return false;
+				}
+			}
+
 		return true;
 	}
-}
+//Added for AATL-23635-----Ends
 
-function checkCharsInTitle {
-	var pcTitle = document.editDataForm.elements("TitleId").value;
-	var length = 30;
-	var totalChars = pcTitle.length
-	if(totalChars > length) {
-		return false;
-	}
-}
-
-
-//Added for GCC-122124 - Grammage and Weight Units check fails for Packaging (AATL-29781) - End
-</script>
-<%!
-//Added for AATL-25903	by JnJ Internal Dev Team	-- STARTS
-public boolean IsReviseToCommercialize(Context context,DomainObject dObj) throws Exception
+//Added for User Story AATL-24845 -- START
+function checkIfNonRestrictedType() {
+	var imputElement = document.getElementsByTagName("input");
+	for(i = 0; i<imputElement.length; i++)
 	{
-		String  sPolicy = "";
-		boolean bIsCommercialize = false;
-
-		try
+		//Modified for UI translation
+		if (imputElement[i].name == "TypeActual")
 		{
-			sPolicy  	= dObj.getInfo(context,"previous.policy");
-			if(UIUtil.isNotNullAndNotEmpty(sPolicy) && sPolicy.equals("RESEARCH"))
-			{
-				bIsCommercialize = true;
+			var specSelectedType = imputElement[i].value;
+		}
+	}
+	var sRestType = "<%=strRestrictedType%>";
+	var sResttypeList = sRestType.split(",");
+	var isNonRestType = true;
+	for(j = 0; j<sResttypeList.length; j++)
+	{
+		if (sResttypeList[j] == specSelectedType)
+		{
+			isNonRestType = false;
+			break;
+		}
+	}
+	if (isNonRestType == true && specSelectedType != "Product Data Part") {
+		var sDefaultCollabSpace = "<%=sCTXCollabSpaceName%>";
+		if (sDefaultCollabSpace.indexOf('Restricted') !== -1) {
+			var specDisplay = document.emxCreateForm.elements['TypeActualDisplay'].value;
+			var messagePart1 = "<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.RestrictedCollab.Spec.Message1")%>";
+			var messagePart2 = "<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.RestrictedCollab.Spec.Message2")%>";
+			var messagePart3 = "<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.RestrictedCollab.Spec.Message3")%>";
+			var message = messagePart1+sDefaultCollabSpace+" "+messagePart2+specDisplay+" "+messagePart3;
+			var result = confirm(message);
+			if (result == false) {
+				window.close();
 			}
 		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			return bIsCommercialize;
-		}
-
 	}
-//Added for AATL-25903	by JnJ Internal Dev Team	-- ENDS
-%>
+}
+//Added for User Story AATL-24845 -- END
 
+function checkForMarketingCompany() {
+
+		return true;
+}
