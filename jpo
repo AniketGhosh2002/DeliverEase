@@ -28,11 +28,12 @@ StringList slStageListToConnectCO 	= FrameworkUtil.split(strStageListToConnectCO
 String strNotApplicableStage 		= FrameworkProperties.getProperty(context,"emxCPN.ProductData.NotApplicableStageListToConnectCO");
 String strSpecCategoryInterim       = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Interim");
 String strSpecCategoryExperimental  = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStatus.Experimental");
-Iterator itr 						= null ;
 String strImpactedSiteExclusionList = EnoviaResourceBundle.getProperty(context,"enoTemplate",context.getLocale(),"enoTemplate.Template.ImpactedSiteExclusionList");
+
 //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
 String 	strSpecStageCommercial = EnoviaResourceBundle.getProperty(context,"emxCPN.ProdDataStage.Commercial");
  //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END
+Iterator itr 						= null ;
 
 String loggedInUser =  context.getUser();
 String personId = PersonUtil.getPersonObjectID(context);
@@ -47,6 +48,7 @@ String sCTXcompanyName = "";
 String sCTXcompanyId = "";
 
 sCTXcompanyName = (String)sList.get(1);
+
 
 //Added for AATL-23635---Start
 String sCTXCollabSpaceName = "";
@@ -96,7 +98,8 @@ strMQLCommand = "print bus '"+DomainConstants.TYPE_COMPANY+"' '"+sCTXcompanyName
 			strMQLCommandResult = prMQL.getResult();
 
 			sCTXcompanyId = strMQLCommandResult.trim();
-			
+
+
 // Added for AATL-23531 -- Starts
 //print attribute 'Marketing Company(s)' select range dump |
 strMQLCommand = "print attribute 'Marketing Company(s)' select range dump |";
@@ -128,25 +131,31 @@ response.setContentType("text/javascript; charset=" + response.getCharacterEncod
 
 
 function preProcessCreatePD(){
-		populateOwner();
-		populateDesignResp();
-		//Added for 18522-Start
-	populateSegement();
-	//Added for 18522-End
-		//Added for AATL-23635----Starts
-			validateSpecTypesForRestrictedCS();
-		//Added for AATL-23635----end
-		
-		//Added for TRU-13471 ---- START
-			//var typeSelected = document.emxCreateForm.elements['TypeActualId'].value;
-			//Modified for UI translation
-			var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
-			if(typeSelected == "Product Data Part")
-			{
-				document.emxCreateForm.elements['TypeActualDisplay'].value = "Select Type";
-			}
-		if(typeSelected != null && typeSelected != ""){
+		//brought on top to make Owner field uneditable - START
+	populateOwner();
+	//brought on top to make Owner field uneditable - END
+
+	//Added for AATL-24312 (GCC-074805)----Starts
+	removeSpecImpactedSite();
+	//Added for AATL-24312 (GCC-074805)----Ends
+
+//Added for AATL-23635----Starts
+validateSpecTypesForRestrictedCS();
+//Added for AATL-23635----end
+
+
+//Added for TRU-13471 ---- START
+	//var typeSelected = document.emxCreateForm.elements['TypeActualId'].value;
+	//Modified for UI translation
+	var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
+	if(typeSelected == "Product Data Part")
+	{
+		document.emxCreateForm.elements['TypeActualDisplay'].value = "Select Type";
+	}
+//Added for TRU-13471 ---- END
+	if(typeSelected != null && typeSelected != ""){
 		emxFormReloadField("Policy");
+		emxFormReloadField("Title");
 	 	emxFormReloadField("Template");
 	 	emxFormReloadField("ExpirationDate");
 	 	var tempDesc = document.getElementById("TemplateDescriptionId")
@@ -155,82 +164,43 @@ function preProcessCreatePD(){
 	 	showTemplateDescription();
 	 	}
 	 	
-	 	<!-- Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN -->
+		<!-- Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN -->
 	 	<!--changeExpirationDateVisibility();-->
 		changeExpirationDateVisibilityBasedonStage(true);
 		<!-- Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END -->
-		<!-- emxFormReloadField("DesignResponsibility"); -->
+	 	<!-- emxFormReloadField("DesignResponsibility"); -->
 	 	reloadUOMField();
 	 	<!-- changeCOLabel(); -->
 		//Added for User Story AATL-24845 -- START
 		checkIfNonRestrictedType();
 		//Added for User Story AATL-24845 -- END
+	}
+
 	<!-- populateOwner(); -->
 	<!-- basicClear('CO'); -->
-		}
-	
+	//commented to make Owner field uneditable - START
+	//populateOwner();
+	//commented to make Owner field uneditable - END
+
+	//Added for 16629-Start
+	populateDesignResp();
+	//Added for 16629-End
+	//Added for 18522-Start
+	populateSegement();
+	//Added for 18522-End
 }
 
-function changeExpirationDateVisibilityBasedonStage(displayAlert) {
-		try{
-			var stage= document.emxCreateForm.elements['Stage'];
-			var expirationDate= document.emxCreateForm.elements['ExpirationDate'];
-			if(stage!=null && stage!=""&& stage.value!= undefined && stage.value == "<%=strSpecStageCommercial%>"){
-				expirationDate.readOnly = true;
-				expirationDate.nextSibling.style.visibility="hidden";
-			}
-			else
-	        {
-	            expirationDate.disabled = false;
-	            expirationDate.nextSibling.style.visibility = "visible";
+function preProcessCreatePDForXSE(){
 
-	        }
+	var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
+	if(typeSelected != null && typeSelected != ""){
+	 	emxFormReloadField("Template");
 	}
-	catch (e)
-		{
-		alert ("Error"+e);
-		}
+
+	showTemplateDescription();
 }
 
-function validateExpDateforStage()
-    {
-    	var expDate = document.forms[0].ExpirationDate_msvalue.value;
-    	var stage = document.forms[0].Stage.value;
-
-		expDate = new Date(parseInt(expDate));
-		var today = new Date();
-		if (today.getFullYear() < 1950)
-	    {
-	      today.setFullYear(expDate.getFullYear() + 100);
-	    }
-	    if (expDate.getFullYear()< 1950)
-	    {
-	        expDate.setFullYear(expDate.getFullYear() + 100);
-	    }
-
-		expDate.setHours(23);
-		expDate.setMinutes(59);
-		expDate.setSeconds(59);
-		expDate.setMilliseconds(999);
-
-		var numberOfDays = (Date.parse(expDate) - Date.parse(today))/86400000;
-		numberOfDays = Math.floor(numberOfDays);
-		//-----------------Modified for AATL-21555------------------start-------------
-		//if( stage != "<%=strSpecStageCommercial%>" && numberOfDays > 365) {
-		if( stage != "<%=strSpecStageCommercial%>" && numberOfDays > 730) {
-		//-----------------Modified for AATL-21555------------------end-------------
-			alert("<%=EnoviaResourceBundle.getProperty(context, "emxCPNStringResource", context.getLocale(), "emxCPN.Common.ExpirationDate.BeyondRangeforDevelopment") %>");
-			return false;
-		} else if(numberOfDays < 0)	{
-			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ExpirationDate")%>");
-			return false;
-		} else{
-			return true;
-		}
-    }
-//Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END
 function populateOwner() {
-	
 	$('[name="ObjectOwnerDisplay"]').val("<xss:encodeForJavaScript><%=loggedInUser %></xss:encodeForJavaScript>");
 	$('[name="ObjectOwner"]').val("<xss:encodeForJavaScript><%=loggedInUser %></xss:encodeForJavaScript>");
 	$('[name="ObjectOwnerOID"]').val("<xss:encodeForJavaScript><%=personId %></xss:encodeForJavaScript>");
@@ -242,16 +212,15 @@ function populateOwner() {
 }
 
 //Added for 16629-Start
-function populateDesignResp() {
-		
+	function populateDesignResp() {
 		$('[name="DesignResponsibilityDisplay"]').val("<%=sCTXcompanyName %>");
 		$('[name="DesignResponsibility"]').val("<%=sCTXcompanyName %>");
 		$('[name="DesignResponsibilityOID"]').val("<%=sCTXcompanyId %>");
 	}
 //Added for 16629-End
+
 //Added for 18522-Start
 	function populateSegement() {
-		
 		$('[name="SegementDisplay"]').val("<%=sSegement %>");
 		$('[name="Segement"]').val("<%=sSegement %>");
 		$('[name="SegementOID"]').val("<%=sCTXcompanyId %>");
@@ -259,7 +228,11 @@ function populateDesignResp() {
 		vSegement.readOnly = true;
 	}
 //Added for 18522-End
+
 function showPDRevision(){
+	<!-- //added by TCS for TRU-11226 : START -->
+	emxFormReloadField("PharmaLifecycleStage");
+	<!-- //added by TCS for TRU-11226 : END -->
    	emxFormReloadField("Revision");
 }
   //IR-416225- Making "Design Responsibility" field non editable
@@ -290,7 +263,12 @@ else
  }
 }
 
+function validateTitle() {
+	alert("inside validatetitle");
+}
+
 function changeHandlerForTemplate(){
+	alert("template change handler");
 	changeImpactedSitelabel();
 var selTemplate = document.emxCreateForm.elements['TemplateId'];
 if(selTemplate.options[selTemplate.selectedIndex].value!="")
@@ -310,37 +288,7 @@ else
 	selTemplate.setAttribute("title","Template");
     	emxFormReloadField("TemplateDescription");
     }
-	
-	function changeImpactedSitelabel()
-	{
-		var selTemplate = document.emxCreateForm.elements['TemplateId'];
-		var strName = selTemplate.options[selTemplate.selectedIndex].text;
-		var excludeList = "<%=strImpactedSiteExclusionList%>";
 
-		var i;
-		var array = excludeList.split(',');
-		var result_style = document.getElementById('calc_Impacted Site');
-		var result_style_height = result_style.style.height;
-
-		var found = "no";
-		for(i = 0; i<array.length; i++) {
-			var option1 = array[i];
-			if(strName == array[i])
-			{
-				document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabel";
-				result_style.style.display='none';
-				document.getElementsByName('Impacted SiteDisplay')[0].value="";
-				document.getElementsByName('Impacted Site')[0].value="";
-				found = "yes";
-				break;
-			}
-		}
-		if ( found == "no" )
-		{
-			result_style.style.display='';
-			document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabelRequired";
-		}
-	}
 
 	function disableRenderLangBasedOnTemplate(){
 	var tempId = document.getElementById("TemplateId").value;
@@ -386,7 +334,7 @@ else
 	            			  	rendLang.options[i].disabled=true;
 	            			  }
             			}
-            		}else{
+            		} else {
             		rendLang.removeAttribute("readonly");
 	            			var lngth = rendLang.options.length;
 	            			for(var i=0; i<lngth; i++){
@@ -399,6 +347,7 @@ else
            });
 	}
 	}
+	
 
 	function showPDTs(){
 		emxFormReloadField("Policy");
@@ -408,15 +357,59 @@ else
 		changeExpirationDateVisibilityBasedonStage(true);
 		<!-- //Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END -->
 		<!-- //added by TCS for TRU-11226 : START -->
+		emxFormReloadField("PharmaLifecycleStage");
     	emxFormReloadField("Template");
     	showTemplateDescription();
     	<!-- changeCOLabel(); -->
+	}
+	
+	
+	
+	
+	function validateTitleChars() {
+		alert("inside validatetitle");
+		var title = document.getElementById("TitleId").value;
+		
+		var maxLength = 30;
+		if(title.trim() > 30) {
+			alert("Title is more than 30 chars");
+		}
+		return true;
+	}
+		
+		function changeImpactedSitelabel()
+	{
+		var selTemplate = document.emxCreateForm.elements['TemplateId'];
+		var strName = selTemplate.options[selTemplate.selectedIndex].text;
+		var excludeList = "<%=strImpactedSiteExclusionList%>";
 
+		var i;
+		var array = excludeList.split(',');
+		var result_style = document.getElementById('calc_Impacted Site');
+		var result_style_height = result_style.style.height;
 
-    }
+		var found = "no";
+		for(i = 0; i<array.length; i++) {
+			var option1 = array[i];
+			if(strName == array[i])
+			{
+				document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabel";
+				result_style.style.display='none';
+				document.getElementsByName('Impacted SiteDisplay')[0].value="";
+				document.getElementsByName('Impacted Site')[0].value="";
+				found = "yes";
+				break;
+			}
+		}
+		if ( found == "no" )
+		{
+			result_style.style.display='';
+			document.getElementById("calc_Impacted Site").childNodes[0].className = "createLabelRequired";
+		}
+	}
 	
 	
-	
+
 	function validateImpactedSites()
 	{
 		//Added for AATL-23531 -- STARTS
@@ -463,7 +456,7 @@ else
 		}
 
 	}
-	
+
 	function checkForValidMarkeingCompanys() {
 
 		var val=document.getElementsByName('Impacted SiteDisplay')[0].value;
@@ -494,6 +487,7 @@ else
 			}
 		}
 	}
+
      function changeExpirationDateVisibility(displayAlert)
 	 {
 	        var status= document.emxCreateForm.elements['Status'];
@@ -517,6 +511,68 @@ else
 
 	        }
 	    }
+		
+		//Added by TCS for TRU-6979,TRU-11103,TRU-11104 - BEGIN
+
+		function changeExpirationDateVisibilityBasedonStage(displayAlert)
+	 {
+			try{
+			var stage= document.emxCreateForm.elements['Stage'];
+			var expirationDate= document.emxCreateForm.elements['ExpirationDate'];
+			if(stage!=null && stage!=""&& stage.value!= undefined && stage.value == "<%=strSpecStageCommercial%>"){
+				expirationDate.readOnly = true;
+				expirationDate.nextSibling.style.visibility="hidden";
+			}
+			else
+	        {
+	            expirationDate.disabled = false;
+	            expirationDate.nextSibling.style.visibility = "visible";
+
+	        }
+			}
+			catch (e)
+			{
+			 alert ("Error"+e);
+			}
+	    }
+
+  function validateExpDateforStage()
+    {
+    	var expDate = document.forms[0].ExpirationDate_msvalue.value;
+    	var stage = document.forms[0].Stage.value;
+
+		expDate = new Date(parseInt(expDate));
+		var today = new Date();
+		if (today.getFullYear() < 1950)
+	    {
+	      today.setFullYear(expDate.getFullYear() + 100);
+	    }
+	    if (expDate.getFullYear()< 1950)
+	    {
+	        expDate.setFullYear(expDate.getFullYear() + 100);
+	    }
+
+		expDate.setHours(23);
+		expDate.setMinutes(59);
+		expDate.setSeconds(59);
+		expDate.setMilliseconds(999);
+
+		var numberOfDays = (Date.parse(expDate) - Date.parse(today))/86400000;
+		numberOfDays = Math.floor(numberOfDays);
+		//-----------------Modified for AATL-21555------------------start-------------
+		//if( stage != "<%=strSpecStageCommercial%>" && numberOfDays > 365) {
+		if( stage != "<%=strSpecStageCommercial%>" && numberOfDays > 730) {
+		//-----------------Modified for AATL-21555------------------end-------------
+			alert("<%=EnoviaResourceBundle.getProperty(context, "emxCPNStringResource", context.getLocale(), "emxCPN.Common.ExpirationDate.BeyondRangeforDevelopment") %>");
+			return false;
+		} else if(numberOfDays < 0)	{
+			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Common.ValidationErrorMessage.ExpirationDate")%>");
+			return false;
+		} else{
+			return true;
+		}
+    }
+    		//Added by TCS for TRU-6979,TRU-11103,TRU-11104 - END
 
  function changeCOLabel() {
 	var stage 	= '';
@@ -712,100 +768,15 @@ function generateChooserURLForImpactedSite(formField) {
         } else {
             selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
         }
-         var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=JNJAEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";
+         /*var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=JNJAEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";*/
+		 
+		 var URL = "../common/emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&form=AEFSearchOrganizationForm&selectedValue="+selValues+"&selection=multiple&table=AEFOrganizationChooserDetails&includeOIDprogram=enoTemplateUI:getBusinessUnits&showInitialResultsCustom=false&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=../common/AEFSearchUtil.jsp";
+		 
 		 showChooser(URL,700,600);
     }
 //Added by Tarique for Bug Fix- Issue #7- Ends
 
-function validateUOMField()
-{
-	var UOMVal = document.emxCreateForm.UOM;
-	if(UOMVal)
-		return true;
-	else
-	{
-		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Alert.UOMValidation")%>");
-		return false;
-	}
-}
-
-function preProcessCreatePDForXSE(){
-
-	var typeSelected = document.emxCreateForm.elements['TypeActual'].value;
-	if(typeSelected != null && typeSelected != ""){
-	 	emxFormReloadField("Template");
-	}
-
-	showTemplateDescription();
-}
-
-function generateChooserURLForImpactedSite(formField) {
-		 var formFieldName          = formField.name;
-        var actualFormFieldName    = formFieldName.substring(3);
-	 var displayFormFieldName   = actualFormFieldName + "Display";
-        var objForm                = document.forms[0];
-        var actualFormField        = objForm.elements[actualFormFieldName];
-	var displayFormField        = objForm.elements[displayFormFieldName];
-        var selValues              = actualFormField.value;
-	var displayValues           = displayFormField.value;
-
-        if(selValues=="" || displayValues==""){
-            selValues="null";
-        } else {
-            selValues=selValues.replace(/&/g, "am-percent"); //remove & with am-percent
-        }
-         var URL = "../common/jnj_emxFullSearch.jsp?field=TYPES=type_Organization:CURRENT=policy_Organization.state_Active&showInitialResultsCustom=false&table=AEFOrganizationChooserDetails&selectedValue="+selValues+"&selection=multiple&fieldNameActual="+actualFormFieldName+"&fieldNameDisplay="+actualFormFieldName+"Display&fieldNameOID="+actualFormFieldName+"OID&submitURL=JNJAEFSearchUtil.jsp&includeOIDprogram=enoTemplateUI:getBusinessUnits";
-		 showChooser(URL,700,600);
-    }
-
-		function validateImpactedSites()
-	{
-		//Added for AATL-23531 -- STARTS
-		if (checkForValidMarkeingCompanys() == false) {
-			return false;
-		}
-		//Added for AATL-23531 -- ENDS
-		var selTemplate = document.emxCreateForm.elements['TemplateId'];
-		var strName = selTemplate.options[selTemplate.selectedIndex].text;
-		var excludeList = "<%=strImpactedSiteExclusionList%>";
-
-		var i;
-		var array = excludeList.split(',');
-		var result_style = document.getElementById('calc_Impacted Site');
-		var found = "no";
-		for(i = 0; i<array.length; i++) {
-			var option1 = array[i];
-
-			if(strName == array[i])
-			{
-				found = "yes";
-				document.getElementsByName('Impacted SiteDisplay')[0].value="";
-				document.getElementsByName('Impacted Site')[0].value="";
-				var val = document.getElementsByName('Impacted SiteDisplay')[0].value;
-				if( val=="" )
-				{
-				return true;
-				}
-				break;
-			}
-		}
-		if (found == "no")
-		{
-			var val=document.getElementsByName('Impacted SiteDisplay')[0].value;
-			if (val=="")
-			{
-			alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.CreateProductData.Message.BlankImpactedSite")%>");
-			return false;
-			}
-			else
-			{
-			return true;
-			}
-		}
-
-	}
-	
-	//Added for AATL-23635----Starts
+//Added for AATL-23635----Starts
 	function validateSpecTypesForRestrictedCS()
 	{
 		var typeName = document.getElementsByTagName("input");
@@ -873,6 +844,171 @@ function generateChooserURLForImpactedSite(formField) {
 	}
 //Added for AATL-23635-----Ends
 
+
+//Added for AATL-24453 (GCC-074033)----Starts
+	function validateSpecTypesForRestrictedCSDynamic()
+	{
+		var returnStatus = true;
+		var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+		var ajaxtext = this.responseText.trim();
+		var ajaxvalues = ajaxtext.split("~");
+		var typeName = document.getElementsByTagName("input");
+		for(i = 0; i<typeName.length; i++)
+		{
+			if (typeName[i].name == "TypeActual")
+			{
+				var specType = typeName[i].value;
+			}
+		}
+		var sRestType = ajaxvalues[1];
+		var sResttypeList = sRestType.split(",");
+		var isApplicable = false;
+		for(j = 0; j<sResttypeList.length; j++)
+		{
+			if (sResttypeList[j] == specType)
+			{
+				isApplicable = true;
+
+				break;
+			}
+		}
+			if (isApplicable == true)
+			{
+				var sAssignedRestType = ajaxvalues[2];
+				var sAssignedResttypeList = sAssignedRestType.split(",");
+				var hasAccess = false;
+				for(k = 0; k<sAssignedResttypeList.length; k++)
+				{
+					if (sAssignedResttypeList[k] == specType)
+					{
+						hasAccess = true;
+						break;
+					}
+				}
+				if (hasAccess == false) {
+					var specDisplay = document.emxCreateForm.elements['TypeActualDisplay'].value;
+					var alertmessage = "<%=EnoviaResourceBundle.getProperty(context,"enoTemplateStringResource",context.getLocale(),"enoTemplate.ValidationErrorMessage.FDandMWICreationInRestrictedCS")%>";
+					alertmessage = alertmessage.replace("<<sType>>", specDisplay);
+					var collabMap = ajaxvalues[0];
+					var collabMapList = collabMap.split("|");
+					var collabSpace = "";
+					for (itr1 = 0; itr1 < collabMapList.length; itr1++) {
+						var collabEntry = collabMapList[itr1].split(":");
+						if (collabEntry[0] == specType) {
+							collabSpace = collabEntry[1];
+						}
+					}
+					alertmessage = alertmessage.replace("<<sCollabSpace>>", collabSpace);
+					alert(alertmessage);
+					returnStatus = false;
+				}
+			}
+		}
+	};
+	xhttp.open("GET", "jnj_getRestrictedCollabSpace.jsp?"+Math.random(), false);
+	xhttp.send();
+	return returnStatus;
+	}
+	//Added for AATL-24453(GCC-074033)----Ends
+	
+	//Added  for AATL-24312 (GCC-074805) for removal of Impacted Site --- STARTS
+	function removeSpecImpactedSite()
+	{
+		var els = document.getElementsByTagName("a");
+		for (var i = 0, l = els.length; i < l; i++) {
+			var el = els[i];
+			if (el.href === 'javascript:basicClear(\'Impacted SiteDisplay\')') {
+				el.href = "javascript:showChooser('../components/jnj_ImpactedSiteChooserFS.jsp?targetLocation=popup&selection=multiple&HelpMarker=emxhelpsearch',700,600)";
+
+			}
+		}
+	}
+	//Added  for AATL-24312 (GCC-074805) for removal of Impacted Site --- ENDS
+
+//Added for User Story AATL-24510 -- START
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function(searchString, position) {
+    position = position || 0;
+    return this.indexOf(searchString, position) === position;
+  };
+}
+
+var interVal = setInterval(findCalAnchor, 500);
+var waitTime = 0;
+
+function findCalAnchor(){
+	waitTime += 500;
+	var allAnchorTag = getDateChooser("javascript:showCalendar");
+	for (var aItr = 0; aItr < allAnchorTag.length; aItr++) {
+		//alert("Found");
+		clearInterval(interVal);
+		var splitHref = allAnchorTag[aItr].href.split(",");
+		var dateField = trim(splitHref[1]);
+		dateField = dateField.replaceAll("'", "");
+		var allEndTag = getDateChooser("javascript:moveToEndDate('"+dateField+"')");
+		//alert(calAnchorTag.id);
+		if (allEndTag.length === 0) {
+			var aEndDate = document.createElement('a');
+			aEndDate.href = "javascript:moveToEndDate('"+dateField+"')";
+			aEndDate.style.visibility = allAnchorTag[aItr].style.visibility;
+			var imgEndDate = document.createElement("img"); 
+			imgEndDate.alt = "31 Dec 9999";
+			imgEndDate.src = "../common/images/31Dec.png";
+			imgEndDate.border = "0";
+			imgEndDate.style.padding = "0px 0px 0px 3px";
+			aEndDate.appendChild(imgEndDate);
+			allAnchorTag[aItr].parentNode.insertBefore(aEndDate, allAnchorTag[aItr].nextSibling);
+		}
+	}
+	if(waitTime > 3000){
+		clearInterval(interVal);
+	}
+
+}
+
+function getDateChooser(searchStr){
+	var finalTag = new Array();
+	var allAnchorTag = document.getElementsByTagName('a');
+	//alert(allAnchorTag.length);
+	for (var aItr = 0; aItr < allAnchorTag.length; aItr++) {
+		//alert(allAnchorTag[aItr].href);
+		if(allAnchorTag[aItr].href != null){
+			var hrefStr = allAnchorTag[aItr].getAttribute("href");
+			if(hrefStr.startsWith(searchStr)){
+				finalTag.push(allAnchorTag[aItr]);
+			}
+		}
+	}
+	return finalTag;
+}
+
+function moveToEndDate(dateField){
+	var dEndDate = new Date();
+	dEndDate.setFullYear(9999, 11, 31);
+	dEndDate.setHours(0);
+	dEndDate.setMinutes(0);
+	dEndDate.setSeconds(0);
+	var strURL = URL_GET_CALENDAR_SELECT;
+	strURL = emxUICore.addURLParam(strURL, "day=" + dEndDate.getDate());
+	strURL = emxUICore.addURLParam(strURL, "mon=" + (dEndDate.getMonth()+1));
+	strURL = emxUICore.addURLParam(strURL, "year=" + dEndDate.getFullYear());
+	var strData = emxUICore.getData(strURL);
+/* 	var calAnchorTag = document.getElementById("formDateChooser");
+	var splitHref = calAnchorTag.href.split(",");
+	var dateField = trim(splitHref[1]);
+	dateField = dateField.replaceAll("'", "");
+	alert(dateField); */
+	document.getElementById(dateField).value = strData;
+	document.getElementById(dateField+"AmPm").value = dEndDate.getTime();
+	document.getElementsByName(dateField+"_msvalue")[0].value = dEndDate.getTime();
+	
+}
 //Added for User Story AATL-24845 -- START
 function checkIfNonRestrictedType() {
 	var imputElement = document.getElementsByTagName("input");
@@ -911,8 +1047,16 @@ function checkIfNonRestrictedType() {
 	}
 }
 //Added for User Story AATL-24845 -- END
-
-function checkForMarketingCompany() {
-
+function validateUOMField()
+{
+	var UOMVal = document.emxCreateForm.UOM;
+	if(UOMVal)
 		return true;
+	else
+	{
+		alert("<%=EnoviaResourceBundle.getProperty(context,"emxCPNStringResource",context.getLocale(),"emxCPN.Alert.UOMValidation")%>");
+		return false;
+	}
 }
+
+
