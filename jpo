@@ -1,47 +1,16 @@
-CLOSURE_TABLES={"Sub Components":[{"name":"Sub Component","type":"select_dropdown","value":"Tape - Spool - Female"},{"name":"Family","type":"select_dropdown","value":"Fiber"},{"name":"Weight/Grammage","type":"type_text","value":"100"},{"name":"Manufacturing Process","type":"select_dropdown","value":"Pulping"}],"Sub Component Composition":[{"name":"Sub Component","type":"select_dropdown","value":"Tape - Spool - Female"},{"name":"Material","type":"select_dropdown","value":"Wax"},{"name":"Material Type","type":"select_dropdown","value":"Ink"},{"name":"Composition%","type":"type_text","value":"100"},{"name":"Primary Material Reference/Supplier","type":"type_text","value":"Test"}],"Suppliers":[{"name":"Supplier","type":"type_text","value":"Test_supplier"}]}
+# ---- Table definitions ----
+TABLE_Sub_Components=Sub Component,Family,Weight/Grammage,Manufacturing Process
+TABLE_Sub_Component_Composition=Sub Component,Material,Material Type,Composition%,Primary Material Reference/Supplier
+TABLE_Suppliers=Supplier
 
+# ---- Attribute definitions ----
+ATTR_Sub_Component=select_dropdown:Tape - Spool - Female
+ATTR_Family=select_dropdown:Fiber
+ATTR_Weight_Grammage=type_text:100
+ATTR_Manufacturing_Process=select_dropdown:Pulping
+ATTR_Material=select_dropdown:Wax
+ATTR_Material_Type=select_dropdown:Ink
+ATTR_Composition=type_text:100
+ATTR_Primary_Material_Reference_Supplier=type_text:Test
+ATTR_Supplier=type_text:Test_supplier
 
-in my code i have this passing the template name
-
-def fill_template_table(object_window, template_name, doc):
-    tables = get_template_tables(template_name)
-    if not tables:
-        print(f"No tables found for template {template_name}")
-        return doc
-
-    for table_name, attrs in tables.items():
-        print(f"➡️ Filling table: {table_name}")
-        doc = fill_table(object_window, table_name, attrs, doc)
-    return doc
-
-def get_template_tables(template_name):
-    tables_str = os.getenv(f"{template_name.upper()}_TABLES")
-    print(tables_str)
-    return json.loads(tables_str) if tables_str else {}
-
-def fill_table(object_window, table_name, attrs, doc):
-    move_to_portal(object_window)
-
-    edit_xpath = f"//i[contains(text(),'{table_name}')]/following::img[@title='Edit']"
-    click_when_ready(By.XPATH, edit_xpath, f"Edit button ({table_name})")
-    take_screenshot_and_append(doc, f"Clicked Edit button for {table_name}")
-    switch_to_window()
-
-    click_when_ready(By.XPATH, "//td[@title='Insert new row']", "Add row button")
-    click_when_ready(By.XPATH, "//td[@position='1']//descendant::td//input", "Clicked new row")
-    click_when_ready(By.XPATH, "//select[@name='columnSelect']", "Clicked select attribute dropdown")
-    take_screenshot_and_append(doc, f"Added new row for {table_name}")
-
-    for attr in attrs:
-        name, attr_type, value = attr["name"], attr["type"], attr["value"]
-        type_or_select("select_dropdown", By.XPATH, "//select[@name='columnSelect']", name, name)
-
-        if attr_type == "select_dropdown":
-            type_or_select("select_dropdown", By.XPATH, "//form[@name='emxTableForm_2']//select", value, name)
-        elif attr_type == "type_text":
-            type_or_select("type_text", By.XPATH, "//form[@name='emxTableForm_2']//input[@type='text']", value, name)
-
-        click_when_ready(By.XPATH, "//input[@value='Apply to Selected']", "Apply button")
-    take_screenshot_and_append(doc, f"Filled and submitted for {table_name}")
-    save_and_submit(object_window)
-    return doc
