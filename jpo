@@ -1,20 +1,10 @@
-def edit_attributes(object_window, doc):
-    move_to_portal(object_window)
-    
-    click_when_ready(By.CSS_SELECTOR, "td[title='Edit Details']", "Edit Attributes")
-    take_screenshot_and_append(doc, f"Clicked edit button")
-    type_or_select("select_dropdown", By.ID, "RegionId", REGION, "Region")
-    type_or_select("select_dropdown", By.ID, "Type of ComponentId", COMPONENT_TYPE, "Component Type")
-    type_or_select("select_dropdown", By.ID, "Category of PackingId", PACKING_LEVEL, "Packing Level")
-    type_or_select("select_dropdown", By.ID, "Neck Finish TypeId", NECK_FINISH_TYPE, "Neck Finish")
-    type_or_select("select_dropdown", By.ID, "Closure TypeId", CLOSURE_TYPE, "Closure")
-    type_or_select("select_dropdown", By.ID, "Neck Finish or Closure SizeId", NECK_SIZE, "Neck Size")
-    take_screenshot_and_append(doc, f"General Description filled")
-    type_or_select("select_dropdown", By.ID, "PC Weight or GrammageId", WEIGHT_TYPE, "Weight Type")
-    type_or_select("select_dropdown", By.ID, "PC UOMId", UOM, "Unit")
-    type_or_select("type_text", By.ID, "PC Total Weight", TOTAL_WEIGHT, "Total Weight")
-    take_screenshot_and_append(doc, f"Total Weight/Grammage filled")
-    type_or_select("select_dropdown", By.ID, "JnJ OpacifiersId", DISRUPTER, "Disrupter")
-    take_screenshot_and_append(doc, f"Recyclability filled")
-    click_when_ready(By.XPATH, "//button[text()='Done' and contains(@class,'btn-primary')]", "Done button")
-    return doc
+REGION=EMEA
+COMPONENT_TYPE=Bag
+PACKING_LEVEL=Primary
+NECK_FINISH_TYPE=Crimp
+CLOSURE_TYPE=Disc Top
+NECK_SIZE=120 / 400
+WEIGHT_TYPE=Weight
+UOM=g
+TOTAL_WEIGHT=100
+DISRUPTER=Carbon Black
