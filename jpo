@@ -1,16 +1,20 @@
-# ---- Table definitions ----
-TABLE_Sub_Components=Sub Component,Family,Weight/Grammage,Manufacturing Process
-TABLE_Sub_Component_Composition=Sub Component,Material,Material Type,Composition%,Primary Material Reference/Supplier
-TABLE_Suppliers=Supplier
-
-# ---- Attribute definitions ----
-ATTR_Sub_Component=select_dropdown:Tape - Spool - Female
-ATTR_Family=select_dropdown:Fiber
-ATTR_Weight_Grammage=type_text:100
-ATTR_Manufacturing_Process=select_dropdown:Pulping
-ATTR_Material=select_dropdown:Wax
-ATTR_Material_Type=select_dropdown:Ink
-ATTR_Composition=type_text:100
-ATTR_Primary_Material_Reference_Supplier=type_text:Test
-ATTR_Supplier=type_text:Test_supplier
-
+def edit_attributes(object_window, doc):
+    move_to_portal(object_window)
+    
+    click_when_ready(By.CSS_SELECTOR, "td[title='Edit Details']", "Edit Attributes")
+    take_screenshot_and_append(doc, f"Clicked edit button")
+    type_or_select("select_dropdown", By.ID, "RegionId", REGION, "Region")
+    type_or_select("select_dropdown", By.ID, "Type of ComponentId", COMPONENT_TYPE, "Component Type")
+    type_or_select("select_dropdown", By.ID, "Category of PackingId", PACKING_LEVEL, "Packing Level")
+    type_or_select("select_dropdown", By.ID, "Neck Finish TypeId", NECK_FINISH_TYPE, "Neck Finish")
+    type_or_select("select_dropdown", By.ID, "Closure TypeId", CLOSURE_TYPE, "Closure")
+    type_or_select("select_dropdown", By.ID, "Neck Finish or Closure SizeId", NECK_SIZE, "Neck Size")
+    take_screenshot_and_append(doc, f"General Description filled")
+    type_or_select("select_dropdown", By.ID, "PC Weight or GrammageId", WEIGHT_TYPE, "Weight Type")
+    type_or_select("select_dropdown", By.ID, "PC UOMId", UOM, "Unit")
+    type_or_select("type_text", By.ID, "PC Total Weight", TOTAL_WEIGHT, "Total Weight")
+    take_screenshot_and_append(doc, f"Total Weight/Grammage filled")
+    type_or_select("select_dropdown", By.ID, "JnJ OpacifiersId", DISRUPTER, "Disrupter")
+    take_screenshot_and_append(doc, f"Recyclability filled")
+    click_when_ready(By.XPATH, "//button[text()='Done' and contains(@class,'btn-primary')]", "Done button")
+    return doc
