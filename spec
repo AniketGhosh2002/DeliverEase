@@ -1,111 +1,98 @@
-tcl;
-eval {
- 
-set base_dir [pwd]  
-set supplier_site_path "$base_dir/SupplierSiteFile.csv"
- 
-# ------------------------------------------------
-# STEP 1: Process Active Supplier / Impacted Sites
-# ------------------------------------------------
-set output [split [mql temp que bus "Organization" * * where "current==Active" select id current attribute\[Entity Type\].value attribute\[Organization Phone Number\].value attribute\[Organization Fax Number\].value attribute\[Postal Code\].value attribute\[State/Region\].value attribute\[Alternate Name\].value attribute\[City\].value attribute\[Country\].value attribute\[Web Site\].value attribute\[Region\].value dump ==;] "\n"]
- 
-set supplier_site_id [open $supplier_site_path "w"]
- 
-puts $supplier_site_id "\"Type\",\"Name\",\"Revision\",\"Object Id\",\"Region\",\"State/Region\",\"Entity Type\",\"Organization Phone Number\",\"Organization Fax Number\",\"Postal Code\",\"Web Site\",\"Alternate Name\",\"City\",\"Country\",\"Validation Comment\""
- 
-proc csv_escape {field} {
-    regsub -all {"} $field {""} field
-    return "\"$field\""
-}
- 
-foreach line $output {
-    set fields              [split $line "=="]
-	set type            [string trim [lindex $fields 0]]
-	set name            [string trim [lindex $fields 1]]
-	set rev             [string trim [lindex $fields 2]]
-    set objectId        [string trim [lindex $fields 3]]
-	set current         [string trim [lindex $fields 4]]
-    set entityType      [string trim [lindex $fields 5]]
-    set phone           [string trim [lindex $fields 6]]
-	set fax             [string trim [lindex $fields 7]]
-	set pin             [string trim [lindex $fields 8]]
-	set state           [string trim [lindex $fields 9]]
-	set alternateName   [string trim [lindex $fields 10]]
-	set city            [string trim [lindex $fields 11]]
-	set country         [string trim [lindex $fields 12]]
-	set website         [string trim [lindex $fields 13]]
-	set region1         [string trim [lindex $fields 14]]
-	set region2         [string trim [lindex $fields 15]]
-	set region3         [string trim [lindex $fields 16]]
-	set region4         [string trim [lindex $fields 17]]
-	set region5         [string trim [lindex $fields 18]]
- 
-	set allowedRegions {"Global" "North America" "Latin America" "Asia Pacific" "EMEA"}
-	set allowedEntityTypes {"Other" "Supplier: Manufacturer" "Supplier: Distributor" "Business Location" "R&D" "Laboratory" "Co-packers" "Marketing Company" "Internal Manufacturing" "External Packaging" "External Manufacturing" "Distribution Center" "Company"}
- 
-    set errors {}
-    if {$entityType eq ""} {
-        lappend errors "Missing Entity Type"
-    } elseif {[lsearch -exact $allowedEntityTypes $entityType] == -1} {
-		lappend errors "Invalid Entity Type: $entityType"
-	}
-    if {$region1 eq ""} {
-		lappend errors "Missing Region"
-	} elseif {[lsearch -exact $allowedRegions $region] == -1} {
-		lappend errors "Invalid Region: $region"
-	}
-    if {$name eq ""} {
-        lappend errors "Missing Name for Object Id - $objectId"
-    }
-	if {[string length $name] > 255} {
-        lappend errors "Name too long ([string length $name] chars)"
-    }
-	if {[string length $state] > 255} {
-        lappend errors "State too long ([string length $state] chars)"
-    }
-    if {[string length $phone] > 40} {
-        lappend errors "Phone Number too long ([string length $phone] chars)"
-    }
-	if {[string length $fax] > 40} {
-        lappend errors "Fax Number too long ([string length $fax] chars)"
-    }
-	if {[string length $pin] > 20} {
-        lappend errors "Postal Code too long ([string length $pin] chars)"
-    }
-	if {[string length $website] > 255} {
-        lappend errors "Web Site too long ([string length $website] chars)"
-    }
-	if {[string length $alternateName] > 255} {
-        lappend errors "Alternate Name too long ([string length $alternateName] chars)"
-    }
-	if {[string length $city] > 255} {
-        lappend errors "City too long ([string length $city] chars)"
-    }
-	if {[string length $country] > 255} {
-        lappend errors "Country too long ([string length $country] chars)"
-    }
- 
-	set validationComment [join $errors {; }]
- 
-	# Write CSV row
-	puts $supplier_site_id [join [list \
-    [csv_escape $type] \
-    [csv_escape $name] \
-    [csv_escape $rev] \
-    [csv_escape $objectId] \
-    [csv_escape $region] \
-    [csv_escape $state] \
-    [csv_escape $entityType] \
-    [csv_escape $phone] \
-    [csv_escape $fax] \
-    [csv_escape $pin] \
-    [csv_escape $website] \
-    [csv_escape $alternateName] \
-    [csv_escape $city] \
-    [csv_escape $country] \
-    [csv_escape $validationComment] \ ] ","]
-}
- 
-close $supplier_site_id
+# ====================================================================
+# Script Name  : getReferenceSpecs_ConfigTypes.tcl
+# Purpose      : Read types from config file and for each type,
+#                fetch Reference Specification relationships and
+#                store them in separate text files (~ separated)
+# ====================================================================
 
+# ---- Step 1: Read type list from config file ----
+set configFile "config.txt"
+set typeLine ""
+set typeList {}
+
+if {[file exists $configFile]} {
+    set fh [open $configFile r]
+    while {[gets $fh line] >= 0} {
+        if {[regexp {^TYPE=(.+)} $line -> typeVal]} {
+            set typeLine $typeVal
+            break
+        }
+    }
+    close $fh
+} else {
+    puts "❌ Config file not found!"
+    exit 1
 }
+
+if {$typeLine eq ""} {
+    puts "❌ TYPE not defined in config.txt"
+    exit 1
+}
+
+# Split types by comma and trim spaces
+foreach t [split $typeLine ","] {
+    set t [string trim $t]
+    if {$t ne ""} {
+        lappend typeList $t
+    }
+}
+
+puts "📋 Types to process: $typeList"
+
+# ---- Step 2: Loop through each type ----
+foreach typeName $typeList {
+    puts "⚙️ Processing Type: $typeName"
+
+    # Prepare output file for this type
+    set safeTypeName [string map {" " "_" "/" "_"} $typeName]
+    set outputFile "ReferenceSpecs_${safeTypeName}.txt"
+    set out [open $outputFile w]
+    puts $out "ParentType~ParentName~ParentRev~ParentID~ReferenceType~ReferenceName~ReferenceRev~ReferenceID"
+
+    # ---- Step 3: Query all objects of the type ----
+    set objectList [mql exec "temp query bus \"$typeName\" * * select id dump |"]
+
+    if {[string trim $objectList] eq ""} {
+        puts "⚠️ No objects found for Type: $typeName"
+        close $out
+        continue
+    }
+
+    # ---- Step 4: For each object, expand Reference Specification ----
+    foreach line [split $objectList "\n"] {
+        if {[string trim $line] eq ""} { continue }
+
+        # Expected format: Type | Name | Rev | ID
+        set fields [split $line "|"]
+        if {[llength $fields] < 4} { continue }
+
+        set parentType [string trim [lindex $fields 0]]
+        set parentName [string trim [lindex $fields 1]]
+        set parentRev  [string trim [lindex $fields 2]]
+        set parentId   [string trim [lindex $fields 3]]
+
+        set expandResult [mql exec "expand bus $parentId relationship \"Reference Specification\" select bus.id bus.name bus.type bus.revision dump |"]
+
+        if {[string trim $expandResult] eq ""} { continue }
+
+        foreach eLine [split $expandResult "\n"] {
+            if {[string trim $eLine] eq ""} { continue }
+
+            set eFields [split $eLine "|"]
+            if {[llength $eFields] < 6} { continue }
+
+            set refType [string trim [lindex $eFields 2]]
+            set refName [string trim [lindex $eFields 3]]
+            set refRev  [string trim [lindex $eFields 4]]
+            set refId   [string trim [lindex $eFields 5]]
+
+            puts $out "$parentType~$parentName~$parentRev~$parentId~$refType~$refName~$refRev~$refId"
+        }
+    }
+
+    close $out
+    puts "✅ Output generated: $outputFile"
+}
+
+puts "🎯 All types processed successfully!"
+exit 0
