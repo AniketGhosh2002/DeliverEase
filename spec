@@ -1,70 +1,87 @@
-#!/usr/bin/tclsh
-# ====================================================================
-# Script Name  : ExtractReferenceDocs.tcl
-# Author       : AGhosh05
-# Purpose      : 
-#   For every Type defined in the configuration file, 
-#   find all objects, expand their "Reference Document" relationships,
-#   and store parent-child details in text files.
-# ====================================================================
+# Read parent names and revisions from config
+set parentNames [readFile "PARENT.NAME"]
+set parentRevs  [readFile "PARENT.REVISION"]
 
+# Handle * or empty entries
+if {[llength $parentNames] == 0 || ([llength $parentNames] == 1 && [lindex $parentNames 0] in {"*" ""})} {
+    set parentNames [list "*"]
+}
 
-tcl;
+if {[llength $parentRevs] == 0 || ([llength $parentRevs] == 1 && [lindex $parentRevs 0] in {"*" ""})} {
+    set parentRevs [list "*"]
+}
 
-# ------------------------------------------------------------
-# Procedure: readFile
-# Purpose: Reads a given property entry from config and 
-#          returns its comma-separated values as a list.
-# ------------------------------------------------------------
-proc readFile {propEntry} {
-    set configPath [file join "/apps/Aniket/ReferenceDocMigration/Config" "LegacyDocConfig.txt"]
+# Start transaction for each entry
+set startTrans [startTransaction]
 
-    if {![file exists $configPath]} {
-        error "Config file not found: $configPath"
-    }
+# Loop through all combinations of parent name and revision
+foreach pName $parentNames {
+    foreach pRev $parentRevs {
 
-    set fh [open $configPath r]
-    set lines [split [read $fh] "\n"]
-    close $fh
+        puts "Processing $typeName — Parent: $pName Rev: $pRev"
 
-    set valuesList {}
-
-    foreach line $lines {
-        # Skip empty lines or comment lines starting with #
-        if {[string trim $line] eq "" || [string match "#*" $line]} {
+        # Fetch all business objects for this type and parent combination
+        if {[catch {
+            mql temp query bus "$typeName" "$pName" "$pRev" \
+                where "from\[$parentRel\]==TRUE" \
+                select id dump ~;
+        } objectList]} {
+            puts $error_log "$typeName~Error: Failed to fetch objects for Parent=$pName Rev=$pRev"
+            set abortTrans [abortTransaction]
             continue
         }
 
-        # Match the desired property and extract values
-        if {[regexp "^$propEntry=(.*)" $line -> values]} {
-            foreach val [split $values ","] {
-                lappend valuesList [string trim $val]
-            }
-            break
+        if {[string trim $objectList] eq ""} {
+            puts $error_log "$typeName~No objects found for Parent=$pName Rev=$pRev"
+            continue
         }
+
+        set count 0
+        set success 0
+
+        foreach line [split $objectList "\n"] {
+            incr count
+            if {[string trim $line] eq ""} { continue }
+
+            set fields [split $line "~"]
+            if {[llength $fields] < 4} { continue }
+
+            set parentType  [string trim [lindex $fields 0]]
+            set parentName  [string trim [lindex $fields 1]]
+            set parentRev   [string trim [lindex $fields 2]]
+            set parentId    [string trim [lindex $fields 3]]
+
+            if {[catch {mql expand bus $parentId relationship "$parentRel" select bus type name revision attribute\[Title\] dump ~;} expandResult]} {
+                puts $error_log "$parentType~Expansion failed for $parentName"
+                continue
+            }
+
+            if {[string trim $expandResult] eq ""} {
+                puts $error_log "$parentType~No Reference Documents for $parentName"
+                continue
+            }
+
+            foreach eLine [split $expandResult "\n"] {
+                if {[string trim $eLine] eq ""} { continue }
+                set eFields [split $eLine "~"]
+                if {[llength $eFields] < 10} { continue }
+
+                set refType   [string trim [lindex $eFields 6]]
+                set refName   [string trim [lindex $eFields 7]]
+                set refRev    [string trim [lindex $eFields 8]]
+                set refTitle  [string trim [lindex $eFields 9]]
+
+                puts $out "$parentType~$parentName~$parentRev~$parentId~$refType~$refName~$refRev~$refTitle"
+                incr success
+            }
+        }
+
+        puts $success_log "Extracted $count objects for $typeName ($pName - $pRev)"
+        puts $success_log "Objects with $parentRel: $success"
     }
-
-    return $valuesList
 }
 
-# ------------------------------------------------------------
-# startTransaction / commitTransaction / abortTransaction
-#   Wrapper functions for MQL transaction management.
-#------------------------------------------------------------------------------
-proc startTransaction {} {
-	set errorCreate [ catch {mql start transaction historyoff triggeroff} ResultCreate ]
-	if {$errorCreate != 0} {
-		#puts "Error starting transaction: $ResultCreate"
-	}
-}
-
-proc commitTransaction {} {
-	set errorCreate [ catch {mql commit transaction} ResultCreate ]
-	if {$errorCreate == 0} {
-		return 0
-	} else {
-		return $ResultCreate
-	}
+set commitTrans [commitTransaction]	}
 }
 
 proc abortTransaction {} {
