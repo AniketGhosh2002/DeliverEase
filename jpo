@@ -1,10 +1,1659 @@
-REGION=EMEA
-COMPONENT_TYPE=Bag
-PACKING_LEVEL=Primary
-NECK_FINISH_TYPE=Crimp
-CLOSURE_TYPE=Disc Top
-NECK_SIZE=120 / 400
-WEIGHT_TYPE=Weight
-UOM=g
-TOTAL_WEIGHT=100
-DISRUPTER=Carbon Black
+
+   public int renderPDF(Context context,String args[]) throws Exception 
+    {
+          int  iResult = 0;
+        /*MNN4:IR-440951-3DEXPERIENCER2015x-
+        1.Handling the multithreading by making all the shared variables as local variables
+        2.ftpClient instances are managed and closed appropriately to avoid the ftp connection closed exception
+        */
+     
+        String isFromRenderPDF = "false";
+        String ftpOutputFolder = null;
+        String dpiFileName = null;
+        String supplierPDFMode=null;
+        mxFtp ftpClientPreInstance = new mxFtp();
+        mxFtp ftpClientPostInstance = new mxFtp();
+
+      //modified for TRU-2559 by AS-TCS - START
+      boolean bIsSpecificView = false;
+      StringBuffer sbHMTLBody = null;
+      StringList slPCGenericList = null;
+      //modified for TRU-2559 by AS-TCS - END
+
+        //Added to fix Spec rendering for non-english languages --- Start------- 
+        Locale tmpLocale = Locale.US;
+        //Added to fix Spec rendering for non-english languages --- End------- 
+
+         try {
+         // //// Clean up the Input folder based on the User settings
+         // semaphore.acquire();
+
+         //Added to fix Spec rendering for non-english languages --- Start------- 
+         tmpLocale = context.getLocale();
+         context.setLocale(Locale.US);
+         //Added to fix Spec rendering for non-english languages --- End------- 
+
+          if (CLEANUP_ON_RESTART != null && "true".equalsIgnoreCase(CLEANUP_ON_RESTART)) {
+              if (START_SERVER.equalsIgnoreCase("true")) {
+                    cleanAdlibFolders(context, ftpOutputFolder, dpiFileName);
+                  START_SERVER = "false";
+              }
+          }
+
+          //Spec Id or SCO Id must be present
+          if(args == null || args.length < 1 || args[0] == null
+             || "".equals(args[0]) || "null".equals(args[0])) {
+              return 1;
+          }
+
+          isFromRenderPDF= "true";
+          String objectId = args[0];
+//          int  iResult = 0;
+          String strLocale = lLocal.toString();
+		  //System.out.println("\n\n **** ENTRY TO RENDER PDF *****");
+          boolean sendSuccessIconMail = false;
+          boolean commitTransaction = false;
+          String sSupFileName = "";
+          String sFileName ="";
+
+          DomainObject dObject = new DomainObject(objectId);
+          StringList busSelect = new StringList();
+          busSelect.add(DomainConstants.SELECT_TYPE);
+          busSelect.add(DomainConstants.SELECT_OWNER);
+          busSelect.add(DomainConstants.SELECT_CURRENT);
+          Map strObjectInfoMap = dObject.getInfo(context, busSelect);
+
+          String strObjectType = (String) strObjectInfoMap.get(DomainConstants.SELECT_TYPE);
+          String strObjectOwner = (String) strObjectInfoMap.get(DomainConstants.SELECT_OWNER);
+          String strObjectState = (String) strObjectInfoMap.get(DomainConstants.SELECT_CURRENT);
+		  //System.out.println("\nType ==== "+strObjectType);
+		  //System.out.println("\nState ==== "+strObjectState);
+		  //System.out.println("\nOwner ==== "+strObjectOwner);
+		  //System.out.println("\nargs.length ==== "+args.length);
+		  //System.out.println("\nargs[1] ==== "+args[1]);
+		  //System.out.println("\nargs[2] ==== "+args[2]);
+		  //System.out.println("\nargs[3] ==== "+args[3]);
+          StringList objectIdList = new StringList(1);
+          objectIdList.addElement(objectId);
+
+          String strSessionId = context.getSession().getSessionId();
+          if(strSessionId.indexOf(":") != -1) {
+              strSessionId = strSessionId.substring(0,strSessionId.indexOf(":"));
+          }
+          String timeStamp = Long.toString(System.currentTimeMillis());
+          String strTempFolderName = strSessionId + timeStamp;
+          strTempFolderName = strTempFolderName.replace(':', '_');
+          String ftpInputFolder = FTP_INPUT_FOLDER + java.io.File.separator + strTempFolderName;
+          ftpOutputFolder = FTP_OUTPUT_FOLDER + java.io.File.separator + strTempFolderName;
+
+          StringList mailToList = new StringList();
+          mailToList.add(strObjectOwner);
+          StringList slFilesList = new StringList();
+
+          String mode = "";
+          if(args.length > 1) mode = args[1];
+
+          boolean isSupplierPDFMode = false;
+          if ("SupplierPDF".equalsIgnoreCase(mode)){
+           isSupplierPDFMode = true;
+           supplierPDFMode="supplierPDF";
+           }
+
+          // load user's roles
+          // userRoleList = new Vector();
+
+          //String supplierRoles = EnoviaResourceBundle.getProperty(context, "emxCPN.RenderSupplierPDF.SupplierRoles");
+
+          // userRoleList.addAll(PersonUtil.getAssignments(context));
+          // userRoleList.add(PropertyUtil.getSchemaProperty(context,"role_IPMOriginator"));
+
+          String destFileName = null;
+
+          String renderSoftwareInstalled = EnoviaResourceBundle.getProperty(context, "emxCPN.RenderPDF");
+          if(renderSoftwareInstalled != null && renderSoftwareInstalled.equalsIgnoreCase("TRUE"))
+          {
+              // mxFtp ftpClient = new mxFtp();
+              boolean isInputFolderCreated = false;
+              boolean isOutputFolderCreated = false;
+
+              try {
+                  StringList objectSelects = new StringList();
+//                  String busWhere = "attribute["+CPNCommonConstants.ATTRIBUTE_IS_TEMPLATE+"]==False";
+
+                  MapList techObjList = new MapList();
+
+                  HashMap specInfoMap = new HashMap();
+                  specInfoMap.put(DomainConstants.SELECT_ID, objectId);
+                  techObjList.add(specInfoMap);
+
+                  StringList objSelects = new StringList();
+                  objSelects.add(DomainConstants.SELECT_OWNER);
+                  objSelects.add(DomainConstants.SELECT_NAME);
+                  objSelects.add(DomainConstants.SELECT_TYPE);
+                  objSelects.add(DomainConstants.SELECT_CURRENT);
+                  objSelects.add(DomainConstants.SELECT_REVISION);
+                  objSelects.add(DomainConstants.SELECT_POLICY);
+                  //objSelects.add("attribute[" + CPNCommonConstants.ATTRIBUTE_PRODUCT_DATA_VIEW_FORMNAME + "]");
+                  objSelects.add("attribute[" + CPNCommonConstants.ATTRIBUTE_PRODUCT_DATA_RENDER_LANGUAGE + "]");
+
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : Start */
+                  String strReportName = "";
+                  String strReportConfigId = "";
+                  String strReportNameActual = "";
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : End */
+                  Iterator techObjItr = techObjList.iterator();
+                  while(techObjItr.hasNext()) {
+                      Map techObjMap = (Map) techObjItr.next();
+                      String techSpecObjId = (String) techObjMap.get(DomainConstants.SELECT_ID);
+                      DomainObject specObject = new DomainObject(techSpecObjId);
+
+                      Map techSpecInfoMap = specObject.getInfo(context, objSelects);
+                      String current = (String)techSpecInfoMap.get(DomainConstants.SELECT_CURRENT);
+                      String watermarkState = current;
+
+                      String strTechSpecType = (String)techSpecInfoMap.get(DomainConstants.SELECT_TYPE);
+                      String objectTypeAlias = FrameworkUtil.getAliasForAdmin(context,"type", strTechSpecType, true);
+
+                     /* String supplierPDFTypeKeyValue = EnoviaResourceBundle.getProperty(context, "emxCPN.RenderExternalPDF."+objectTypeAlias);
+
+                      if(isSupplierPDFMode && !"TRUE".equalsIgnoreCase(supplierPDFTypeKeyValue)) {
+                          return iResult;
+                      }*/
+
+                      boolean renderProcess = false;
+
+                      // Create input/output folders to host rendered files
+                      String strTechSpecName = (String)techSpecInfoMap.get(DomainConstants.SELECT_NAME);
+                      // Added by TJ on 04/26/2005 to eliminate spaces on the filename.
+                      strTechSpecName = replaceSpacesTru(strTechSpecName);
+
+                      if(isSupplierPDFMode) {
+                          strTechSpecName = "SUP-" + strTechSpecName;
+                      }
+
+                      String strTechSpecRev = (String)techSpecInfoMap.get(DomainConstants.SELECT_REVISION);
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : Start
+                       * modified for TRU-2559 by AS-TCS - START
+                       */
+                      if(args.length >= 4 && args[3] != null && args[3].length()!=0 && !("COMBO_PDF").equals(args[3]))
+                      {
+                        DomainObject doConfigReport = DomainObject.newInstance(context,args[3]);
+                        strReportName = doConfigReport.getAttributeValue(context, CPNCommonConstants.ATTRIBUTE_CONFIGURABLE_REPORT_NAME);
+                        strReportConfigId = doConfigReport.getAttributeValue(context, CPNCommonConstants.ATTRIBUTE_CONFIGURABLE_REPORT_ID);
+                        strReportNameActual = doConfigReport.getAttributeValue(context, CPNCommonConstants.ATTRIBUTE_CONFIGURABLE_REPORT_NAME);
+                        strReportName = strReportName.replace(' ','_');
+                        strReportName = '_' + strReportName + '_';
+                        String strSectionList = doConfigReport.getAttributeValue(context,CPNCommonConstants.ATTRIBUTE_SECTION_LIST);
+
+                        //Commented for TRU-2559 : Spec Team A : Sprint 8 : Start
+                        /*if(UIUtil.isNullOrEmpty(strSectionList)){
+                            return iResult;
+                        }*/
+                        //Commented for TRU-2559 : Spec Team A : Sprint 8 : End
+                      }
+                      else if(args.length >= 4 && ("COMBO_PDF").equals(args[3]))
+                      {
+                          strReportName = args[4];
+                          strReportName = strReportName.replace(' ','_');
+                          strReportName = '_' + strReportName + '_';
+                      }
+                      //modified for TRU-2559 by AS-TCS - END
+                      StringBuffer srcFileNameBuffer = new StringBuffer();
+                      StringBuffer destFileNameBuffer = new StringBuffer();
+					  //Modified for user story AATL-25367 - START
+					  StringBuffer MEPFileNameBuffer = new StringBuffer();
+					  StringBuffer revAndApprovalFileNameBuffer = new StringBuffer();
+					  String strRMMEPhtm = "";
+					  String sNewHTMLName = "";
+					  //Modified for user story AATL-25367 - END
+                      String srcFileName ="";
+                    
+                    /* modified for TRU-2559 by AS-TCS - START
+                     * PDF naming convention changed for General View for TRU-22045, July 11, 2016.
+                     */
+                    String sSpecType = strTechSpecType.replace(' ','_');;
+                    if(specObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_CONSUMER_SPECIFICATION))
+                    {
+                        if(strReportName.contains("General_View"))
+                        {
+                            destFileName = destFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("General").append(".pdf").toString();
+                            srcFileName = srcFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("General").append(".htm").toString();
+							//Modified for user story AATL-25367 - START
+							strRMMEPhtm = MEPFileNameBuffer.append("RM_MEPTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("General").append(".htm").toString();
+							sNewHTMLName = revAndApprovalFileNameBuffer.append("RevHistoryAndApprovalsTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("General").append(".htm").toString();
+							//Modified for user story AATL-25367 - END
+                        }
+                        else if (strReportName.contains("Specific_View"))
+                        {
+                            destFileName = destFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("Specific").append(".pdf").toString();
+                            srcFileName = srcFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("Specific").append(".htm").toString();
+							//Modified for user story AATL-25367 - START
+							strRMMEPhtm = MEPFileNameBuffer.append("RM_MEPTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("Specific").append(".htm").toString();
+							sNewHTMLName = revAndApprovalFileNameBuffer.append("RevHistoryAndApprovalsTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("Specific").append(".htm").toString();
+							//Modified for user story AATL-25367 - END
+                        }
+						//Added for user story AATL-22145 -- START
+						else if (strReportName.contains("FG_PWI_View"))
+                        {
+                            destFileName = destFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("FG_PWI_Report").append(".pdf").toString();
+                            srcFileName = srcFileNameBuffer.append(sSpecType).append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("FG_PWI_Report").append(".htm").toString();
+							//Modified for user story AATL-25367 - START
+							strRMMEPhtm = MEPFileNameBuffer.append("RM_MEPTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("FG_PWI_Report").append(".htm").toString();
+							sNewHTMLName = revAndApprovalFileNameBuffer.append("RevHistoryAndApprovalsTable").append("_").append(strTechSpecName).append("_").append(strTechSpecRev).append("_").append("FG_PWI_Report").append(".htm").toString();
+							//Modified for user story AATL-25367 - END
+                        }
+						//Added for user story AATL-22145 -- END
+                    }
+                    else
+                    {
+                        destFileName = destFileNameBuffer.append(strTechSpecName).append("-").append(strReportConfigId).append("-Rev").append(strTechSpecRev).append(".pdf").toString();
+                        srcFileName = srcFileNameBuffer.append(strTechSpecName).append("-").append(strReportConfigId).append("-Rev").append(strTechSpecRev).append(".htm").toString();
+                    }
+                     //modified for TRU-2559 by AS-TCS - END
+//                      String srcFileName = strTechSpecName +"-Rev" + strTechSpecRev + ".htm";
+//                      String destFileName = strTechSpecName +"-Rev" + strTechSpecRev + ".pdf";
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : End */
+                      String altDestFileName = srcFileName + ".pdf";
+
+                      //create folders on ftp server
+                      try {
+                          //System.out.println(objectId + " : Connecting to FTP Input folder ");
+                          ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, FTP_INPUT_FOLDER, false);
+                          if(!ftpClientPreInstance.isDir(strTempFolderName)) {
+                              ftpClientPreInstance.mkdir(strTempFolderName);
+                          }
+                          //System.out.println(objectId + " : Creating Temporary Directory in input " + strTempFolderName);
+                      // ftpClient.close();
+                      } finally {
+                         //System.out.println(objectId + " : Disconnecting FTP after Temporary Directory Creation in Input ");
+                         ftpClientPreInstance.disconnect();
+                      }
+                      //this flag is used for Input folder clean up
+                      isInputFolderCreated = true;
+                    
+                      try {
+                          //System.out.println(objectId + " : Connecting to FTP output folder ");
+                          ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, FTP_OUTPUT_FOLDER, false);
+                          if(!ftpClientPreInstance.isDir(strTempFolderName)) {
+                              ftpClientPreInstance.mkdir(strTempFolderName);
+                          }
+                          //System.out.println(objectId + " : Creating Temporary Directory in output " + strTempFolderName);
+                          //ftpClient.close();
+                      } finally {
+                          //System.out.println(objectId + " : Disconnecting FTP after Temporary Directory Creation in output ");
+                          ftpClientPreInstance.disconnect();
+                      }
+                      //this flag is used for Output folder clean up
+                      isOutputFolderCreated = true;
+
+                      //Get value of Attribute ATTRIBUTE_SPECIFICATION_VIEW_FORMNAME
+                      //String strFormName = (String)techSpecInfoMap.get("attribute[" + CPNCommonConstants.ATTRIBUTE_PRODUCT_DATA_VIEW_FORMNAME + "]");
+                      
+                      /*String strRenderLanguage = (String)techSpecInfoMap.get("attribute[" + CPNCommonConstants.ATTRIBUTE_PRODUCT_DATA_RENDER_LANGUAGE + "]");
+
+                      String languageKey = "emxFramework.IconMailLanguageLocale" + strRenderLanguage;
+                      String languageCode = null;
+                      try {
+                            languageCode = EnoviaResourceBundle.getProperty(context, languageKey);
+                      } catch (Exception e) {
+                          languageCode  = Locale.ENGLISH.toString();
+                      }*/
+                      
+                      String languageCode  = Locale.ENGLISH.toString();
+
+                      String Charset = EnoviaResourceBundle.getProperty(context, "emxCPN.Charset." + languageCode);
+                      String state = EnoviaResourceBundle.getStateI18NString(context, (String)techSpecInfoMap.get(SELECT_POLICY), current, languageCode);
+
+                      if( (!languageCode.equalsIgnoreCase("ja")) &&
+                          (!languageCode.equalsIgnoreCase("kor")) &&
+                          (!languageCode.equalsIgnoreCase("cn")) &&
+                          (!languageCode.equalsIgnoreCase("zh_cn")) &&
+                          (!languageCode.equalsIgnoreCase("zh_TW")) &&
+                          (!languageCode.equalsIgnoreCase("zh-tw")) &&
+                          (!languageCode.equalsIgnoreCase("zh-cn")) ) {
+                          watermarkState = EnoviaResourceBundle.getStateI18NString(context,(String)techSpecInfoMap.get(SELECT_POLICY),current,languageCode);
+                      }
+                      slFilesList.add(srcFileName);
+
+                      //Generate a formatted pdf of TechSpec Information similar to SpecView
+                  String getHTMLOutput ="";
+                  if (isSupplierPDFMode)
+                  {
+                      getHTMLOutput = generateHTMLOutput2(context,objectId,languageCode,supplierPDFMode,isFromRenderPDF);
+                  }else
+                  {
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : Start */
+                      if(args.length >=4) 
+                      {
+                        //added for TRU-2559 by AS-TCS - START
+                        if (strReportName.equals("_Release_Snapshot_") || strReportName.equals("_Specific_View_"))
+                        {   //Modified for Issue 22 -START
+                            String argsMcNeil[] = new String[1];
+                            argsMcNeil[0] = objectId;
+                            //This view needs to be available in the PC-U & FG objects only
+							//Modified for user story AATL-25469---STARTS
+                            /* if(dObject != null && (dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_PACKAGING_COMPONENT_UNIQUE) 
+                                               || dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_FINISHED_GOOD) 
+                                               || dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_RAW_MATERIAL) ||( dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_PRODUCT_RELEASE) && (new ${CLASS:emxCPNProductData}(context,args).isMcNeilSpecification(context,argsMcNeil))) )) */
+							if(dObject != null && (dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PACKAGING_COMPONENT_UNIQUE) 
+                                               || dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_FINISHED_GOOD) 
+                                               || dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_RAW_MATERIAL) ||( dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PRODUCT_RELEASE) && (new emxCPNProductData_mxJPO(context,args).isMcNeilSpecification(context,argsMcNeil))) || (dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PACKAGING_COMPONENT) && (new emxCPNProductData_mxJPO(context,args).isMcNeilSpecification(context,argsMcNeil))) ))
+							//Modified for user story AATL-25469---ENDS
+                            {
+                                bIsSpecificView = true;
+                                //Generate Basic PDF for the Special Spec (all sections in this spec should come)
+                                getHTMLOutput = generateHTMLOutput(context,objectId,languageCode,"",isFromRenderPDF,supplierPDFMode);
+                            }
+                        }
+                        else
+                        {
+                            getHTMLOutput = generateHTMLOutput(context,objectId,languageCode,args[3],isFromRenderPDF,supplierPDFMode);
+							//System.out.println("\n\nSteady State Release 27## 14. getHTMLOutput: "+getHTMLOutput);
+                        }
+                        //added for TRU-2559 by AS-TCS - END
+                      }
+                      else 
+                      {
+                          getHTMLOutput = generateHTMLOutput(context,objectId,languageCode,"",isFromRenderPDF,supplierPDFMode);
+                      }
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : End */
+                  }
+                  try { 
+                      //System.out.println(objectId + " : Connecting to transfer Spec to FTP");
+                      ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                      ftpClientPreInstance.create(srcFileName);
+                      //System.out.println(objectId + " : transfering Spec to FTP site");
+                      Writer outHtm = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+
+                      //added for TRU-2559 by AS-TCS - START
+                        if ( bIsSpecificView == true )
+                        {
+                            sbHMTLBody = new StringBuffer();
+                            //This view needs to be available in the PC-U object
+                            if (dObject != null && dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PACKAGING_COMPONENT_UNIQUE))
+                            {
+                                slPCGenericList = getConnectedPCGenericList(context,objectId);
+                            }
+                            //This view needs to be available in the FG object
+                            /* else if (dObject != null && dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_FINISHED_GOOD))
+                            {
+                                slPCGenericList = getConnectedPRPWIDCList(context,objectId);
+                            } */
+                            //This view needs to be available in the RM object
+                            /* else if (dObject != null && dObject.isKindOf(context,${CLASS:JnJ_trU_SpecGlobalVariables}.TYPE_RAW_MATERIAL))
+                            {
+                                //generating MEP Tables for RM Specifications
+                                String sMEPTableHTML = "";
+                                sMEPTableHTML = (String)generateMEPTables(context,dObject);
+                                if(sMEPTableHTML != null && !"".equals(sMEPTableHTML))
+                                {
+                                    sbHMTLBody.append("<br>");
+                                    sbHMTLBody.append(sMEPTableHTML);
+                                    getHTMLOutput = getHTMLOutput + sbHMTLBody.toString();
+                                }
+                            } */
+                            
+                            //appending combo view to the generic view for FG and PC-U specifications
+                            /* if( slPCGenericList != null )
+                            {
+                                for (int i = 0; i < slPCGenericList.size(); i++) 
+                                {
+                                    String sPCGObjId = (String) slPCGenericList.get(i);
+                                    String sPCGHTMLBody = generateHTMLOutput(context,sPCGObjId,languageCode,"",isFromRenderPDF,supplierPDFMode);
+                                    if ( sPCGHTMLBody != null )
+                                    {
+                                        sbHMTLBody.append(sPCGHTMLBody);
+                                        sbHMTLBody.append("<br>");
+                                    }
+                                }
+                                getHTMLOutput = getHTMLOutput + sbHMTLBody.toString();
+                            } */
+                        }
+                        //added for TRU-2559 by AS-TCS - END
+                        
+                          outHtm = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                          // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+                          if (Charset != null && Charset.equals("UTF-8"))
+                          {
+                            outHtm.write("\uFEFF");
+                          }
+                          // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+                          outHtm.write(getHTMLOutput);
+                          outHtm.flush();
+                          outHtm.close();
+                          //System.out.println(objectId + " : closing spec after transfer to FTP");
+                          //ftpClient.close();
+                      } finally {
+                        //System.out.println(objectId + " : disconnect after spec transfer to FTP");
+                        ftpClientPreInstance.disconnect();
+                      }
+                      StringBuffer DPIString = new StringBuffer();
+                      DPIString.append(srcFileName);
+                      DPIString.append("\n");
+
+                      // Creating Supplier PDF
+                      StringBuffer SuppDPIString = new StringBuffer();
+                      String srcSuppFileName = "";
+                      String destSuppFileName = "";
+                      String altDestSuppFileName = "";
+
+                      matrix.db.File tempFileObj = null;
+                      FileList allFilesObjList = new FileList();
+
+                      FileList genericFileList = specObject.getFiles(context,"generic");
+                      genericFileList.sort();
+
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : Start */
+                      /* R417 : B1R Commented below lines not to compare the internationlized string to actual report name */
+                    //String strConsolidatedReportI18NName = CPNUIUtil.getProperty(context, "emxCPN.ProductDataTemplate.ConfigurableReport.Consolidated_Report");
+                    //String strReleaseSnapShotI18NName = CPNUIUtil.getProperty(context, "emxCPN.ProductDataTemplate.ConfigurableReport.Release_SnapShot");
+
+                    //Modified for Specific PDF Issue -START 
+                    //Issue - When we are promoting PR the specific PDF does not have the content file. 
+                    //if("1".equals(strReportConfigId) || "2".equals(strReportConfigId)) {
+					//Modified to fix content file checkin issue in FG PWI View -- START
+					//if("1".equals(strReportConfigId) || strReportName.contains("Specific") || "2".equals(strReportConfigId))
+                      if("1".equals(strReportConfigId) || strReportName.contains("Specific") || "2".equals(strReportConfigId) || "3".equals(strReportConfigId))
+					//Modified to fix content file checkin issue in FG PWI View -- END
+                      {
+                     //Modified for Specific PDF Issue -END 
+/* wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010 : End */
+                          if(!isSupplierPDFMode) {
+                              allFilesObjList.addAll(genericFileList);
+                              for(int i=0;i<genericFileList.size();i++) {
+                                  tempFileObj = (matrix.db.File) genericFileList.get(i);
+                                  String tempFileName = tempFileObj.getName();
+                                  DPIString.append(tempFileName);
+                                  DPIString.append("\n");
+                              }
+                          }
+// wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010
+                      }
+
+                      if(isSupplierPDFMode) {
+
+                          FileList filesListSupp = specObject.getFiles(context,"Supplier PDF Content");
+                          filesListSupp.sort();
+
+                          StringList fileNameList = new StringList();
+                          StringBuffer strTempBuffer = new StringBuffer();
+                          for(int i=0;i<filesListSupp.size();i++) {
+                              tempFileObj = (matrix.db.File)filesListSupp.get(i);
+                              String tempFileName = tempFileObj.getName();
+                              fileNameList.add(tempFileName);
+                              allFilesObjList.addElement(tempFileObj);
+                              strTempBuffer.append(tempFileName);
+                              strTempBuffer.append("\n");
+                          }
+
+
+                          for(int i=0;i<genericFileList.size();i++) {
+                              tempFileObj = (matrix.db.File) genericFileList.get(i);
+                              String tempFileName = tempFileObj.getName();
+                              if(!fileNameList.contains(tempFileName)) {
+                                  SuppDPIString.append(tempFileName);
+                                  SuppDPIString.append("\n");
+                                  allFilesObjList.addElement(tempFileObj);
+                              }
+                          }
+
+                          DPIString.append(strTempBuffer);
+
+                          allFilesObjList.sort();
+                      }
+                      //Check out All files in fileslist to Adlib Input Folder.
+                      //if(files != null && files.size() > 0)         
+                      if(allFilesObjList != null && allFilesObjList.size() > 0) {
+                          try {
+                              //System.out.println(objectId + " : connecting to transfer the files ");
+                              ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                              for(int i=0;i<allFilesObjList.size();i++) {
+                                  //code added for SR00411086  multibyte character in file name - start
+                                  String sFileConvertedName= UUID.randomUUID().toString(); 
+                                  tempFileObj = (matrix.db.File) allFilesObjList.get(i);
+                                  String tempFileName = tempFileObj.getName();
+								  //Modified as past of DS-Fix (SR00530136) for User Story AATL-24462 -- START
+                                  //String convertedFilename = sFileConvertedName.concat(tempFileName.substring(tempFileName.indexOf(".")));
+                                  String convertedFilename = sFileConvertedName.concat(tempFileName.substring(tempFileName.lastIndexOf(".")));
+								//Modified as past of DS-Fix (SR00530136) for User Story AATL-24462 -- END
+                                  slFilesList.add(convertedFilename);
+                                  ftpClientPreInstance.create(convertedFilename);
+                                  //code added for SR00411086  multibyte character in file name - end
+                                  
+                                  //System.out.println(objectId + " : transferring the file " + convertedFilename);
+                                  
+                                  BufferedOutputStream out = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                  specObject.checkoutFile(context, false, tempFileObj.getFormat(), tempFileName, out);
+                                  out.flush();
+                                  out.close();
+                                  //System.out.println(objectId + " : Close the File after transfer " + convertedFilename);
+                              }
+                            //  ftpClient.close();
+                         } finally {
+                          //System.out.println(objectId + " : Disconnect ftp after file trasnfer");
+                          ftpClientPreInstance.disconnect();
+                         }
+                      }
+                        //TRU add end user story id= TRU-17158
+                        //Added for TRU-13567 Sprint 9------Starts
+                        String sHtmlApprovalsTable = "";
+                        String sHtmlRevHistoryTable = "";
+						// Added for AATL-29790 -- START
+                        String sHtmlMinorRevHistoryTable = "";
+						// Added for AATL-29790 -- END
+                        String strHtmlNew = "";
+                        String strObjType = "";
+						// Commented next line for AATL-25367 Folder duplication issue 
+						//String sNewHTMLName = "RevHistoryAndApprovalsTable.htm";
+                        String argsMcNeil[] = new String[1];
+                        argsMcNeil[0] = objectId;
+                        // generating "Revision History" or "Revisions" Table depending on type of specification
+                        if(dObject != null && (dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_FORMULA_DEVICE)))
+                        {
+                            //added as a part of AATL-23644 : START
+                            if(new emxCPNProductData_mxJPO(context,args).isDocCentricSpecification(context,argsMcNeil) == true)
+                            {
+                                strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC1;
+                            }
+                            else
+                            {
+                                strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC;
+                            }
+                            //added as a part of AATL-23644 : END
+                        }
+                        else
+                        {
+                            strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC1;
+                        }
+						//Modified for User Story AATL-25328 (View only current revision details in rev history table of RM General View) -- START
+						//sHtmlRevHistoryTable = (String)getRevisionHistoryTable(context,objectId,strObjType);
+						sHtmlRevHistoryTable = (String)getRevisionHistoryTable(context,objectId,strObjType,strReportName);
+						//Modified for User Story AATL-25328 (View only current revision details in rev history table of RM General View) -- END
+                        //generating "Approval" Table
+                        sHtmlApprovalsTable= (String)getApprovalsForProductDataViewPDF(context, objectId);
+						
+						// Added for AATL-29790 -- START
+						sHtmlMinorRevHistoryTable = (String)getMinorRevisionHistoryTable(context, objectId);
+
+						if ( bIsSpecificView == true  && dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_RAW_MATERIAL))
+						{
+							strHtmlNew = sHtmlRevHistoryTable + sHtmlApprovalsTable + sHtmlMinorRevHistoryTable;
+						}
+						else
+						{
+						//Added for AATL-29790 -- END
+							strHtmlNew = sHtmlRevHistoryTable + sHtmlApprovalsTable;
+						}
+                        Writer outHtmNew = null;
+                        if (strHtmlNew != null && !"".equals(strHtmlNew))
+                        {
+                            slFilesList.add(sNewHTMLName);
+                            ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                            ftpClientPreInstance.create(sNewHTMLName);
+                            outHtmNew = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                            // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+                            if (Charset != null && Charset.equals("UTF-8"))
+                            {
+                                outHtmNew.write("\uFEFF");
+                            }
+                            // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+                            outHtmNew.write("<head>");
+                            //TRU update begin user story id= TRU-16610
+                            outHtmNew.write("<style>");
+                            //TRU add start - Table overflow issue
+							//Added for AATL-24722 (font size change)-- START
+							if (UIUtil.isNotNullAndNotEmpty(sFontSize)) {
+								outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+								outHtmNew.write(sFontSize);
+								outHtmNew.write("; color:#5b5d5e; } ");
+								outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+								outHtmNew.write(sFontSize);
+								outHtmNew.write("; line-height: 18px; font-family: \"Arial\"; } ");
+							} else {
+								outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+								outHtmNew.write(sDefaultFontSize);
+								outHtmNew.write("; color:#5b5d5e; } ");
+								outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+								outHtmNew.write(sDefaultFontSize);
+								outHtmNew.write("; line-height: 18px; font-family: \"Arial\"; } ");
+							}
+							//Added for AATL-24722 (font size change)-- END
+                            outHtmNew.write(" table { table-layout: fixed; border-collapse:collapse; border-collapse:expression('separate', cellSpacing = '0');     border-spacing:0; border:0; } ");
+                            //TRU add End - Table overflow issue
+                            outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: 10pt; line-height: 18px; font-family: \"Arial\"; } ");
+                            // Modified to avoid page break for long tables on July 04, 2016-------Starts
+                            outHtmNew.write(" tr { page-break-inside: avoid;} ");
+                            // Modified to avoid page break for long tables on July 04, 2016-------Ends
+                            outHtmNew.write("</style>");
+                            //TRU update end-user story id= TRU-16610
+                            outHtmNew.write("</head>");
+                            outHtmNew.write("<body>");
+                            outHtmNew.write(strHtmlNew);
+                            outHtmNew.flush();
+                            outHtmNew.close();
+                            //ftpClientPreInstance.close();
+                            ftpClientPreInstance.disconnect(); 
+                            //Added for TRU-13567 Sprint 9------Ends
+                        }
+						// Moved the MEP attachment section to the end of the RM PDF generation AATL-26037 -- START						
+                        //TRU add begin user story id= TRU-17158
+						//Commented next line for user story AATL-25367 
+                        //String strRMMEPhtm = "RM_MEPTable.htm";
+                        String sHtmlRMMEPTable = "";
+                        String sMEPTableHTML = "";
+                        if ( bIsSpecificView == true )
+                        {
+                            sbHMTLBody = new StringBuffer();
+                            if (dObject != null && dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_RAW_MATERIAL))
+                            {
+                                //generating MEP Tables for RM Specifications
+								//Modified for User Story AATL-26037 --START
+                                // sMEPTableHTML = (String)generateMEPTable(context,dObject);
+								//System.out.println("Inside render PDF :::::::::::::::: sMEPTableHTML generateMEPTable::::::::::::::::: \n"+sMEPTableHTML);
+								// sMEPTableHTML = "<br>";
+								// sMEPTableHTML = "<tr><td><strong style=\"font-size: 18px;\">RM Stapling Table</strong></td></tr>";
+								//Modified for User Story AATL-26037 --START
+                                sMEPTableHTML = (String) JPO.invoke(context, "JnJ_trU_MEPPDFRendition", null, "generateMEPHTMLOutput", args, Object.class);
+								//System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n sMEPTableHTML 003 :::::::::::::::::::"+sMEPTableHTML);
+								//Modified for User Story AATL-26037 --END
+								// sMEPTableHTML = (String) ${CLASS:JnJ_trU_MEPPDFRendition}.generateMEPContent(context, dObject);
+								// ${CLASS:JnJ_trU_MEPPDFRendition} jpoMEP = new ${CLASS:JnJ_trU_MEPPDFRendition}();
+								// sMEPTableHTML = (String) jpoMEP.generateMEPContent(context, dObject);
+                                if(sMEPTableHTML != null && !"".equals(sMEPTableHTML))
+                                {
+                                    sbHMTLBody.append("<br>");
+                                    sbHMTLBody.append(sMEPTableHTML);
+                                    sHtmlRMMEPTable = sHtmlRMMEPTable + sbHMTLBody.toString();
+                                    slFilesList.add(strRMMEPhtm);
+                                    ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                                    ftpClientPreInstance.create(strRMMEPhtm);
+                                    Writer outRMMEPHtm = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                                    // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+                                    if (Charset != null && Charset.equals("UTF-8"))
+                                    {
+                                        outRMMEPHtm.write("\uFEFF");
+                                    }
+									//Modified for User Story AATL-26037 --START
+									/* String sDefaultFontKeyMEP = "emxCPN.MEP_FontSize.Default";
+									sDefaultFontSize = EnoviaResourceBundle.getProperty(context, sDefaultFontKeyMEP);
+                                    // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+                                   outRMMEPHtm.write("<head>");
+                                    outRMMEPHtm.write("<style>");
+                                    //TRU add start - Table overflow issue
+                                    outRMMEPHtm.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+									outRMMEPHtm.write(sDefaultFontSize);
+									outRMMEPHtm.write("; } ");
+                                    outRMMEPHtm.write(" table { table-layout: fixed; border-collapse:collapse; border-collapse:expression('separate', cellSpacing = '0');   border-spacing:0; border:0; } ");
+                                    //TRU add End - Table overflow issue
+                                    outRMMEPHtm.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+									outRMMEPHtm.write(sDefaultFontSize);
+									outRMMEPHtm.write("; line-height: 18px; font-family: \"Arial\"; } ");
+									// Modified to avoid page break for long tables on July 04, 2016-------Starts
+                                    outRMMEPHtm.write(" tr { page-break-inside: avoid;} ");
+                                    // Modified to avoid page break for long tables on July 04, 2016-------Ends
+                                    outRMMEPHtm.write("</style>");
+                                    outRMMEPHtm.write("</head>");
+                                    outRMMEPHtm.write("<body>");
+                                    outRMMEPHtm.write(sHtmlRMMEPTable); */
+									// System.out.println("Inside the MEP Rendition Process ::::::::::outRMMEPHtm ::::::::::"+outRMMEPHtm.toString());
+									//Modified for User Story AATL-26037 --END
+                                    outRMMEPHtm.write(sHtmlRMMEPTable);
+                                    outRMMEPHtm.flush();
+                                    outRMMEPHtm.close();
+                                    //ftpClientPreInstance.close();
+                                    ftpClientPreInstance.disconnect();
+                                }
+                            }
+                        }
+						// Moved the MEP attachment section to the end of the RM PDF generation AATL-26037 -- END						
+                      StringBuffer dpiFileNameBuffer = new StringBuffer();
+
+                      String strWaterMarkSettings = null;
+                      try {
+                        //Modified for TRU-13806 Sprint 8
+                        //strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPN.RenderPDF.WaterMarkInfo");
+                        strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo");
+                        //Added for TRU-13806 Sprint 8---------Starts
+                        if(specObject != null && specObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_CONSUMER_SPECIFICATION))
+                        {
+                            if (current.equals(JnJ_trU_SpecGlobalVariables_mxJPO.SPEC_STATE_APPROVED) || current.equals(JnJ_trU_SpecGlobalVariables_mxJPO.SPEC_STATE_EFFECTIVE))
+                            {
+								//Added for AATL-25208 (GCC-083317)--- START
+								if (current.equals(JnJ_trU_SpecGlobalVariables_mxJPO.SPEC_STATE_APPROVED))
+								{
+									strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo_Approved&Effective");
+								}
+								else //Effective
+								{
+									if(specObject != null && specObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_FINISHED_GOOD)) //For FG
+									{
+										if (destFileName != null && !"".equals(destFileName) && destFileName.contains("_Specific.pdf")) //Specific View PDF
+										{
+											strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo_Approved&Effective_ForFGandDC");
+										}
+										else // FG General View and PWI Report
+										{
+											strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo_Approved&Effective");
+										}
+									}
+									else if (specObject != null && specObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_DECORATED_COMPONENT)) //For DC
+									{
+										strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo_Approved&Effective_ForFGandDC");
+									}
+									else
+									{
+										strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo_Approved&Effective");
+									}
+								}
+								//Added for AATL-25208 (GCC-083317)--- END								
+                            }
+                            else if (!current.equals(JnJ_trU_SpecGlobalVariables_mxJPO.SPEC_STATE_APPROVED) || !current.equals(JnJ_trU_SpecGlobalVariables_mxJPO.SPEC_STATE_EFFECTIVE))
+                            {
+                                strWaterMarkSettings = EnoviaResourceBundle.getProperty(context, "emxCPNStringResource",lLocal,"emxCPN.RenderPDF.WaterMarkInfo");
+                            }
+                        }
+                        //Added for TRU-13806 Sprint 8---------Ends
+                      } catch (Exception exp) {
+                            strWaterMarkSettings = "TEXT=$<current>|FONTCOLOR=255|FONTNAME=Arial|FONTSIZE=18|FONTSIZEMODE=Absolute|FONTSIZEPERCENT=20|FONTSTYLE=Solid|ALIGNMENT=Center|HORIZONTAL=3.5|VERTICAL=-6.5|LAYER=Foreground|ORIENTATION=307|PAGES=All|POSITION=AutoCenter|OPACITY=50";
+                      } //Modified for TRU-13806 Sprint 8
+                      String strExpression = null;
+                      String strValue = null;
+                      while (strWaterMarkSettings.indexOf("$<") != -1) {
+                          strExpression = strWaterMarkSettings.substring(strWaterMarkSettings.indexOf("$<")+2, strWaterMarkSettings.indexOf(">"));
+                          strValue = specObject.getInfo(context, strExpression);
+                          strWaterMarkSettings = strWaterMarkSettings.substring(0, strWaterMarkSettings.indexOf("$<")) + strValue + strWaterMarkSettings.substring(strWaterMarkSettings.indexOf(">")+1, strWaterMarkSettings.length());
+                      }
+
+                      dpiFileName = dpiFileNameBuffer.append(strTempFolderName).append(strTechSpecName).append("-").append(strReportConfigId).append("-Rev").append(strTechSpecRev).append(".xml").toString();
+                      // The below 3 lines are commented so that they do not generate extra xml file for Specific PDF
+                      // This issue was identified during Sprint 17 AATL-24218
+                      //ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpInputFolder, false);
+                      //ftpClientPreInstance.create(dpiFileName);
+                      //BufferedOutputStream outDPI = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+
+                    //Modified for TRU-13806 Sprint 8
+                    
+                    // outDPI.write(createXMLJobTicketString(FTP_REMOTE_INPUT_FOLDER + INPUT_SEPERATOR + strTempFolderName,
+                                                    // FTP_REMOTE_OUTPUT_FOLDER + OUTPUT_SEPERATOR + strTempFolderName,
+                                                    // slFilesList, destFileName, strWaterMarkSettings).getBytes());
+						//Modified to fix double job xml creation for FG PWI View -- START
+                        if(!strReportName.equals("_Specific_View_") && !strReportName.contains("FG_PWI"))
+						//Modified to fix double job xml creation for FG PWI View -- END
+                        {
+								String sParentObjRev = "";
+								//Added for User Story AATL-26038 -- START
+								if (dObject != null && dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PACKAGING_COMPONENT)) {
+									String sOrigReportNamePC = strReportName.replace('_', ' ');
+									sOrigReportNamePC = sOrigReportNamePC.trim();
+									String sMinorRevEnabledReportForPC = EnoviaResourceBundle.getProperty(context, "emxCPN.MinorRevision.PC.Reports");
+									//System.out.println("Printing strReportName :::: "+strReportName+" :: sMinorRevEnabledReportForPC ::: "+sMinorRevEnabledReportForPC);
+									String sSpecRev = dObject.getInfo(context, DomainConstants.SELECT_REVISION);
+									//System.out.println("Printing sSpecRev :::: "+sSpecRev);
+									if(sMinorRevEnabledReportForPC.equals(sOrigReportNamePC)) {
+										String sMinorAttribute = EnoviaResourceBundle.getProperty(context, "emxCPN."+sOrigReportNamePC.replace(' ', '_')+".MinorAttribute");
+										//System.out.println("Printing MinorAttribute :::: "+sMinorAttribute);
+										String sMinorRevision = dObject.getInfo(context, "attribute["+sMinorAttribute+"].value");
+										if (UIUtil.isNotNullAndNotEmpty(sMinorRevision)) {
+											sFinalRev = sSpecRev+"."+sMinorRevision;
+										}
+									}
+								}
+								//System.out.println("Printing sFinalRev :::: "+sFinalRev);
+							//Added for User Story AATL-26038 -- END
+                           // Added to compensate for the commenting of above 3 lines
+                          
+						  // Added for AATL-29499-starts
+						  
+						   StringList slPCDCConnectedList = null;
+						  
+							if (dObject != null && (dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_PACKAGING_COMPONENT) || dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_DECORATED_COMPONENT)))
+							{
+								//System.out.println("\n\n Inside If PC_DC spec type- ");
+								srcFileName = "";
+								sbHMTLBody = new StringBuffer();
+								DomainObject dConnObj = null;
+								String sConnObjId = "";
+								slPCDCConnectedList = getConnectedHUList(context,objectId);
+								String sConnObjType = "";
+								String sConnObjName = "";
+								String sConnObjRev = "";
+								String getHTMLOutputSpecific ="";
+								matrix.db.File tempFileConnectedObj = null;
+								String sConnectedFileName = "";
+								FileList genericFileListNewHU = new FileList();
+								sParentObjRev = dObject.getRevision(context);
+								sFinalParentRevPCDC = sParentObjRev;
+								
+								if( slPCDCConnectedList != null )
+								{
+									String sMinorAttribute = EnoviaResourceBundle.getProperty(context, "emxCPN.Specific_View.MinorAttribute");
+									String sMinorRevision = dObject.getInfo(context, "attribute["+sMinorAttribute+"].value");
+									if (UIUtil.isNotNullAndNotEmpty(sMinorRevision)) {
+										sFinalParentRevPCDC = sParentObjRev+"."+sMinorRevision;
+									}
+									
+									for ( int i = 0; i < slPCDCConnectedList.size(); i++ ) 
+									{
+										String sPCDCConncHTMLBody = "";
+										
+										
+										srcFileNameBuffer = new StringBuffer();
+										sConnObjId = (String) slPCDCConnectedList.get(i);
+										dConnObj = new DomainObject(sConnObjId);
+										sConnObjType = dConnObj.getType(context);
+										sConnObjName = dConnObj.getName(context);
+										sConnObjRev = dConnObj.getRevision(context);
+										//System.out.println("\n\n Child HU Name- "+sConnObjName);
+										//System.out.println("\n\n Child HU Revision - "+sConnObjRev);
+										
+										String sAttrMigrated = JnJ_trU_SpecGlobalVariables_mxJPO.ATTRIBUTE_ISMIGRATED;
+										String strIsMigrated = dConnObj.getInfo(context, "attribute["+ sAttrMigrated +"].value");
+									
+										if (!strIsMigrated.equalsIgnoreCase("Yes"))
+										{
+											srcFileName = srcFileNameBuffer.append(sConnObjType).append("_").append(sConnObjName).append("_").append(sConnObjRev).append("_").append("General").append(".htm").toString();
+											sPCDCConncHTMLBody = generateHTMLOutput(context,sConnObjId,languageCode,"",isFromRenderPDF,supplierPDFMode);
+										}
+										//System.out.println("\n\n Child HU HTML - "+sPCDCConncHTMLBody);
+										if (sPCDCConncHTMLBody != null && !"".equals(sPCDCConncHTMLBody))
+										{
+											sbHMTLBody.append(sPCDCConncHTMLBody);
+											
+											getHTMLOutputSpecific = getHTMLOutputSpecific + sbHMTLBody.toString();
+											slFilesList.add(srcFileName);
+											ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+											ftpClientPreInstance.create(srcFileName);
+											Writer outHtmSpecific = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+											outHtmSpecific = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+											if (Charset != null && Charset.equals("UTF-8"))
+											{
+												outHtmSpecific.write("\uFEFF");
+											}
+											outHtmSpecific.write(getHTMLOutputSpecific);
+											outHtmSpecific.flush();
+											outHtmSpecific.close();
+											ftpClientPreInstance.disconnect();
+										}
+										getHTMLOutputSpecific ="";
+										sbHMTLBody = new StringBuffer();
+										
+										String strFileFormat = "";
+										if (!strIsMigrated.equalsIgnoreCase("Yes"))
+										{
+											strFileFormat = "generic";
+										}
+										genericFileListNewHU = dConnObj.getFiles(context,strFileFormat);
+										if (genericFileListNewHU != null && genericFileListNewHU.size() > 0)
+										{
+											ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+											for(int j = 0; j < genericFileListNewHU.size(); j++) 
+											{
+												tempFileConnectedObj = (matrix.db.File) genericFileListNewHU.get(j);
+												sConnectedFileName = tempFileConnectedObj.getName();
+
+												if (!strIsMigrated.equalsIgnoreCase("Yes"))
+												{
+													//code added for SR00411086  multibyte character in file name - start
+													String sFileConvertedName= UUID.randomUUID().toString(); 
+													String convertedFilename = sFileConvertedName.concat(sConnectedFileName.substring(sConnectedFileName.indexOf("."))); 
+													slFilesList.add(convertedFilename);
+													ftpClientPreInstance.create(convertedFilename);
+													//code added for SR00411086  multibyte character in file name - end
+												}
+												BufferedOutputStream out = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+												dConnObj.checkoutFile(context, false, tempFileConnectedObj.getFormat(), sConnectedFileName, out);
+												out.flush();
+												out.close();
+											}
+											ftpClientPreInstance.disconnect();
+										}
+										sHtmlApprovalsTable = "";
+										sHtmlRevHistoryTable = "";
+										strHtmlNew = "";
+										strObjType = "";
+										sNewHTMLName = "RevHistoryAndApprovalsTable_"+sConnObjName+"_"+sConnObjRev+".htm";
+										String argsMcNeil1[] = new String[1];
+										argsMcNeil1[0] = sConnObjId;
+										
+										strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC1;
+										
+										 if (!strIsMigrated.equalsIgnoreCase("Yes"))
+										{
+											// generate Revision history table
+											sHtmlRevHistoryTable = (String)getRevisionHistoryTable(context,sConnObjId,strObjType,strReportName);
+											//generating "Approval" Table
+											sHtmlApprovalsTable= (String)getApprovalsForProductDataViewPDF(context, sConnObjId);
+											strHtmlNew = sHtmlRevHistoryTable + sHtmlApprovalsTable;
+										}
+										
+										if (strHtmlNew != null && !"".equals(strHtmlNew))
+										{
+											slFilesList.add(sNewHTMLName);
+											ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+											ftpClientPreInstance.create(sNewHTMLName);
+											outHtmNew = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+											// Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+											if (Charset != null && Charset.equals("UTF-8"))
+											{
+												outHtmNew.write("\uFEFF");
+											}
+											// Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+											outHtmNew.write("<head>");
+											outHtmNew.write("<style>");
+											//TRU add start - Table overflow issue
+											//Added for AATL-24722 (font size change)-- START
+											if (UIUtil.isNotNullAndNotEmpty(sFontSize)) {
+												outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+												outHtmNew.write(sFontSize);
+												outHtmNew.write("; color:#5b5d5e; } ");
+												outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+												outHtmNew.write(sFontSize);
+												outHtmNew.write("; line-height: 18px; font-family: \"Arial\"; } ");
+											} else {
+												outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+												outHtmNew.write(sDefaultFontSize);
+												outHtmNew.write("; color:#5b5d5e; } ");
+												outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+												outHtmNew.write(sDefaultFontSize);
+												outHtmNew.write("line-height: 18px; font-family: \"Arial\"; } ");
+											}
+											//Added for AATL-24722 (font size change)-- END
+											outHtmNew.write(" table { table-layout: fixed; border-collapse:collapse; border-collapse:expression('separate', cellSpacing = '0');     border-spacing:0; border:0; } ");
+											//TRU add End - Table overflow issue
+											outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: 10pt; line-height: 18px; font-family: \"Arial\"; } ");
+											// Modified to avoid page break for long tables on July 04, 2016-------Starts
+											outHtmNew.write(" tr { page-break-inside: avoid;} ");
+											// Modified to avoid page break for long tables on July 04, 2016-------Ends
+											outHtmNew.write("</style>");
+											outHtmNew.write("</head>");
+											outHtmNew.write("<body>");
+											outHtmNew.write(strHtmlNew);
+											outHtmNew.flush();
+											outHtmNew.close();
+											//ftpClientPreInstance.close();
+											ftpClientPreInstance.disconnect();
+										}
+									}
+								}
+							}
+										
+						  // Added for AATL-29499-ends
+						  try {
+                              //System.out.println(objectId + " : connecting to tranfer DPI File to FTP");
+                            
+                              ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpInputFolder, false);
+                              ftpClientPreInstance.create(dpiFileName);
+                              BufferedOutputStream outDPI = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                //System.out.println(objectId + " : transfer DPI File");
+                                outDPI.write(createXMLJobTicketString(FTP_REMOTE_INPUT_FOLDER + INPUT_SEPERATOR + strTempFolderName,
+                                                            FTP_REMOTE_OUTPUT_FOLDER + OUTPUT_SEPERATOR + strTempFolderName,
+                                                            slFilesList, destFileName, strWaterMarkSettings, specObject, context, "", "", "", "").getBytes());
+                                 outDPI.flush();
+                                 outDPI.close();
+                                 //System.out.println(objectId + " : close DPI after transfer ");
+                                //ftpClient.close();
+                            } finally {
+                                 //System.out.println(objectId + " : disconnect FTP after DPI transfer ");
+                                 ftpClientPreInstance.disconnect();
+                            }
+							
+							
+							
+                                 //ftpClientPreInstance.close();
+                         }
+                         //TRU update end user story id= TRU-18565
+                          
+                        //TRU add begin user story id= TRU-18565
+						//Modified for User Story AATL-22145 -- START(Include Stapling logic for FG PWI Report)
+                        //if ( bIsSpecificView == true )
+                        if ( bIsSpecificView == true || (UIUtil.isNotNullAndNotEmpty(strReportName) && strReportName.contains("FG_PWI")))
+						//Modified for User Story AATL-22145 -- START
+                        {
+                            sbHMTLBody = new StringBuffer();
+                            destFileNameBuffer = new StringBuffer();
+                            StringList slFGConnectedList = null;
+                            destFileName = "";
+                            srcFileName = "";
+                            String sConnObjType = "";
+                            String sConnObjName = "";
+                            String sConnObjRev = "";
+                            String sParentObjType = "";
+                            String sParentObjTypeWithoutSpace = "";
+                            String sParentObjName = "";
+                            String sParentObjRev = "";
+                            String sParentObjIAPPClassification = "";
+							//Modified for AATL-24417 -- START
+                            //String sFGConncHTMLBody = "";
+							//Modified for AATL-24417 -- END
+                            String sConnObjId = "";
+                            String sParentSpecFileName = "";
+                            String sConnectedFileName = "";
+                            String getHTMLOutputSpecific ="";
+                            dpiFileNameBuffer = new StringBuffer();
+                            matrix.db.File tempFileConnectedObj = null;
+                            FileList genericFileListNew = new FileList();
+                            StringList slFilesListNew = new StringList();
+                            DomainObject dConnObj = null;
+                            // Append the parent spec html
+                            if ( slFilesList != null && slFilesList.size() > 0 )
+                            {
+                                for ( int k = 0; k < slFilesList.size(); k++ )
+                                {
+                                    sParentSpecFileName = (String) slFilesList.get(k);
+                                    slFilesListNew.add(sParentSpecFileName);
+                                }
+                            }
+                            //This view needs to be available in the FG object [Specific View]
+                            if (dObject != null && dObject.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_FINISHED_GOOD))
+                            {
+                                sParentObjType = dObject.getType(context);
+                                sParentObjName = dObject.getName(context);
+                                sParentObjRev = dObject.getRevision(context);
+                                sParentObjIAPPClassification = dObject.getAttributeValue(context,JnJ_trU_SpecGlobalVariables_mxJPO.ATTRIBUTE_IAPP_CLASSIFICATION);
+								//Modified for User Story AATL-22145 -- START (Chnaging the signature to get only PWI list for FG PWI view)
+                                //slFGConnectedList = getConnectedPRPWIDCList(context,objectId);
+                                slFGConnectedList = getConnectedPRPWIDCList(context,objectId,strReportName);
+								//Modified for User Story AATL-22145 -- END
+                            }
+                            else
+                            {
+                                sParentObjType = dObject.getType(context);
+                                sParentObjName = dObject.getName(context);
+                                sParentObjRev = dObject.getRevision(context);
+                                sParentObjIAPPClassification = dObject.getAttributeValue(context,JnJ_trU_SpecGlobalVariables_mxJPO.ATTRIBUTE_IAPP_CLASSIFICATION);
+                            }
+							//Added for AATL-24417 -- START
+							String sParentObjWithoutSpace = replaceSpacesTru(sParentObjName);
+							//Added for AATL-24417 -- END
+							//Added for User Story AATl-2724 - START
+							sFinalParentRev = sParentObjRev;
+							if(UIUtil.isNotNullAndNotEmpty(strReportName)){
+								String sOrigReportName = strReportName.replace('_', ' ');
+								sOrigReportName = sOrigReportName.trim();
+								String sMinorRevEnabledReport = EnoviaResourceBundle.getProperty(context, "emxCPN.MinorRevision.Reports");
+								StringList slMinorRevEnabledReports = FrameworkUtil.split(sMinorRevEnabledReport, ",");
+								if(slMinorRevEnabledReports.contains(sOrigReportName)) {
+									String sMinorAttribute = EnoviaResourceBundle.getProperty(context, "emxCPN."+sOrigReportName.replace(' ', '_')+".MinorAttribute");
+									String sMinorRevision = dObject.getInfo(context, "attribute["+sMinorAttribute+"].value");
+									if (UIUtil.isNotNullAndNotEmpty(sMinorRevision)) {
+										sFinalParentRev = sParentObjRev+"."+sMinorRevision;
+									}
+								}
+							}
+
+							//Added for User Story AATl-2724 - END
+                            sParentObjTypeWithoutSpace = sParentObjType.replace(' ','_');
+							//Modified for User Story AATL-22145(FG PWI Report) & AATL-24417(Remove spaces from parent object name)-- START
+							if (UIUtil.isNotNullAndNotEmpty(strReportName) && strReportName.contains("FG_PWI")) {
+								destFileName = destFileNameBuffer.append(sParentObjTypeWithoutSpace).append("_").append(sParentObjWithoutSpace).append("_").append(sParentObjRev).append("_").append("FG_PWI_Report").append(".pdf").toString();
+							} else {
+								destFileName = destFileNameBuffer.append(sParentObjTypeWithoutSpace).append("_").append(sParentObjWithoutSpace).append("_").append(sParentObjRev).append("_").append("Specific").append(".pdf").toString();
+							}
+                            //Modified for User Story AATL-22145(FG PWI Report) & AATL-24417(Remove spaces from parent object name)-- END
+							//System.out.println("Line 6203:::::::::::: Printing slFGConnectedList:::::::::::::::::::::::::::::::: "+slFGConnectedList);
+                            if( slFGConnectedList != null )
+                            {
+                                for ( int i = 0; i < slFGConnectedList.size(); i++ ) 
+                                {
+									//Modified for AATL-24417 -- START \\Fix duplicate PDF Stapling Issue
+									String sFGConncHTMLBody = "";
+									//Modified for AATL-24417 -- END
+                                    srcFileNameBuffer = new StringBuffer();
+                                    sConnObjId = (String) slFGConnectedList.get(i);
+                                    dConnObj = new DomainObject(sConnObjId);
+                                    sConnObjType = dConnObj.getType(context);
+                                    sConnObjName = dConnObj.getName(context);
+                                    sConnObjRev = dConnObj.getRevision(context);
+                                    
+                                    // Added for TRU-23168 : Starts
+                                    String sAttrMigrated = JnJ_trU_SpecGlobalVariables_mxJPO.ATTRIBUTE_ISMIGRATED;
+                                    String strIsMigrated = dConnObj.getInfo(context, "attribute["+ sAttrMigrated +"].value");
+                                    
+                                    //if non-migrated spec, generate the PDF for spec body with trU custom code
+                                    if (!strIsMigrated.equalsIgnoreCase("Yes"))
+                                    {
+                                        srcFileName = srcFileNameBuffer.append(sConnObjType).append("_").append(sConnObjName).append("_").append(sConnObjRev).append("_").append("Specific").append(".htm").toString();
+                                        sFGConncHTMLBody = generateHTMLOutput(context,sConnObjId,languageCode,"",isFromRenderPDF,supplierPDFMode);
+                                    }
+                                    // Added for TRU-23168 : Ends
+                                    
+                                    // HTML Body metadata
+                                    if (sFGConncHTMLBody != null && !"".equals(sFGConncHTMLBody))
+                                    {
+                                        sbHMTLBody.append(sFGConncHTMLBody);
+										//Modified for JIRA Bug AATL-26249 -- START
+                                        //sbHMTLBody.append("<br>");
+										//Modified for JIRA Bug AATL-26249 -- END
+                                        getHTMLOutputSpecific = getHTMLOutputSpecific + sbHMTLBody.toString();
+                                        slFilesListNew.add(srcFileName);
+                                        ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                                        ftpClientPreInstance.create(srcFileName);
+                                        Writer outHtmSpecific = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                                        outHtmSpecific = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                                        // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+                                        if (Charset != null && Charset.equals("UTF-8"))
+                                        {
+                                            outHtmSpecific.write("\uFEFF");
+                                        }
+                                        // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+                                        outHtmSpecific.write(getHTMLOutputSpecific);
+                                        outHtmSpecific.flush();
+                                        outHtmSpecific.close();
+                                        ftpClientPreInstance.disconnect();
+                                    }
+                                    getHTMLOutputSpecific ="";
+                                    sbHMTLBody = new StringBuffer();
+                                    // Content files
+                                    
+                                    /* Added for TRU-23168 : Starts
+                                     * If migrated spec, append the metadata PDF directly to HTML body (JView format)
+                                     * If non-migrated spec, append the content files to the HTML body (generic format)
+                                     */
+                                    String strFileFormat = "";
+                                    if (!strIsMigrated.equalsIgnoreCase("Yes"))
+                                    {
+                                        strFileFormat = "generic";
+                                    }
+                                    else
+                                    {
+                                        strFileFormat = "JView";
+                                    }
+                                    genericFileListNew = dConnObj.getFiles(context,strFileFormat);
+                                    String sMigratedFileName = "";
+                                    String sConnObjName1 = "";
+                                    // Added for TRU-23168 : Ends
+                                    
+                                    if (genericFileListNew != null && genericFileListNew.size() > 0)
+                                    {
+                                        ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                                        for(int j = 0; j < genericFileListNew.size(); j++) 
+                                        {
+                                            tempFileConnectedObj = (matrix.db.File) genericFileListNew.get(j);
+                                            sConnectedFileName = tempFileConnectedObj.getName();
+                                            
+                                            // Added for TRU-23168 : Starts
+                                            if (!strIsMigrated.equalsIgnoreCase("Yes"))
+                                            {
+                                                //code added for SR00411086  multibyte character in file name - start
+                                                String sFileConvertedName= UUID.randomUUID().toString(); 
+                                                String convertedFilename = sFileConvertedName.concat(sConnectedFileName.substring(sConnectedFileName.indexOf("."))); 
+                                                slFilesListNew.add(convertedFilename);
+                                                ftpClientPreInstance.create(convertedFilename);
+                                                //code added for SR00411086  multibyte character in file name - end
+                                            }
+                                            else
+                                            {
+                                                sConnObjName1 = replaceSpacesTru(sConnObjName);
+                                                if (sConnectedFileName.startsWith("Internal"))
+                                                {
+                                                    sMigratedFileName = sConnectedFileName;
+                                                }
+                                                else if(sConnectedFileName.startsWith(sConnObjName1))
+                                                {
+                                                    sMigratedFileName = sConnectedFileName;
+                                                    break;
+                                                }
+												//Modified for AATL-24417 -- START
+                                                // else
+                                                // {
+                                                    // sMigratedFileName = "";
+                                                // }
+												//Modified for AATL-24417 -- END
+                                                ftpClientPreInstance.create(sConnectedFileName);
+                                            }
+                                            // Added for TRU-23168 : Ends
+                                              
+                                            //ftpClientPreInstance.create(sConnectedFileName);
+                                            BufferedOutputStream out = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                            dConnObj.checkoutFile(context, false, tempFileConnectedObj.getFormat(), sConnectedFileName, out);
+                                            out.flush();
+                                            out.close();
+                                        }
+                                        
+                                        // Added for TRU-23168 : Starts
+                                        if (strIsMigrated.equalsIgnoreCase("Yes") && !"".equals(sMigratedFileName) && sMigratedFileName != null)
+                                        {
+                                            slFilesListNew.add(sMigratedFileName);
+                                            ftpClientPreInstance.create(sMigratedFileName);
+                                            BufferedOutputStream out = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                            dConnObj.checkoutFile(context, false, tempFileConnectedObj.getFormat(), sMigratedFileName, out);
+                                            out.flush();
+                                            out.close();
+                                            ftpClientPreInstance.disconnect();
+                                        }
+                                        // Added for TRU-23168 : Ends
+                                        
+                                        ftpClientPreInstance.disconnect();
+                                    }
+                                    // generating "Revision History" or "Revisions" Table depending on type of connected specification
+                                    sHtmlApprovalsTable = "";
+                                    sHtmlRevHistoryTable = "";
+                                    strHtmlNew = "";
+                                    strObjType = "";
+                                    sNewHTMLName = "RevHistoryAndApprovalsTable_"+sConnObjName+"_"+sConnObjRev+".htm";
+                                    String argsMcNeil1[] = new String[1];
+                                    argsMcNeil1[0] = sConnObjId;
+                                    if(dConnObj != null && (dConnObj.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_FORMULA_DEVICE)))
+                                    {
+                                        //added as a part of AATL-23644 : START
+                                        if(new emxCPNProductData_mxJPO(context,args).isDocCentricSpecification(context,argsMcNeil1) == true)
+                                        {
+                                            strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC1;
+                                        }
+                                        else
+                                        {
+                                            strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC;
+                                        }
+                                        //added as a part of AATL-23644 : END
+                                    }
+                                    else
+                                    {
+                                        strObjType = JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_REVISIONS_CHARACTERISTIC1;
+                                    }
+                                    
+                                    // Added for TRU-23168 : Starts
+                                    if (!strIsMigrated.equalsIgnoreCase("Yes"))
+                                    {
+									//Modified for User Story AATL-25328 (View only current revision details in rev history table of RM General View) -- START
+                                        //sHtmlRevHistoryTable = (String)getRevisionHistoryTable(context,sConnObjId,strObjType);
+                                        sHtmlRevHistoryTable = (String)getRevisionHistoryTable(context,sConnObjId,strObjType,strReportName);
+									//Modified for User Story AATL-25328 (View only current revision details in rev history table of RM General View) -- END
+                                        //generating "Approval" Table
+                                        sHtmlApprovalsTable= (String)getApprovalsForProductDataViewPDF(context, sConnObjId);
+                                        strHtmlNew = sHtmlRevHistoryTable + sHtmlApprovalsTable;
+                                    }
+                                    // Added for TRU-23168 : Ends
+                                    
+                                    if (strHtmlNew != null && !"".equals(strHtmlNew))
+                                    {
+                                        slFilesListNew.add(sNewHTMLName);
+                                        ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                                        ftpClientPreInstance.create(sNewHTMLName);
+                                        outHtmNew = new BufferedWriter(new OutputStreamWriter(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance),Charset));
+                                        // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Starts
+                                        if (Charset != null && Charset.equals("UTF-8"))
+                                        {
+                                            outHtmNew.write("\uFEFF");
+                                        }
+                                        // Modified for JIRA ID TRU-21938 to add BOM for UTF encoding-------Ends
+                                        outHtmNew.write("<head>");
+                                        outHtmNew.write("<style>");
+                                        //TRU add start - Table overflow issue
+										//Added for AATL-24722 (font size change)-- START
+										if (UIUtil.isNotNullAndNotEmpty(sFontSize)) {
+											outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+											outHtmNew.write(sFontSize);
+											outHtmNew.write("; color:#5b5d5e; } ");
+											outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+											outHtmNew.write(sFontSize);
+											outHtmNew.write("; line-height: 18px; font-family: \"Arial\"; } ");
+										} else {
+											outHtmNew.write(" body, th, td, p { word-wrap:break-word; font-family: \"Arial\"; font-size: ");
+											outHtmNew.write(sDefaultFontSize);
+											outHtmNew.write("; color:#5b5d5e; } ");
+											outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: ");
+											outHtmNew.write(sDefaultFontSize);
+											outHtmNew.write("line-height: 18px; font-family: \"Arial\"; } ");
+										}
+                                        //Added for AATL-24722 (font size change)-- END
+                                        outHtmNew.write(" table { table-layout: fixed; border-collapse:collapse; border-collapse:expression('separate', cellSpacing = '0');     border-spacing:0; border:0; } ");
+                                        //TRU add End - Table overflow issue
+                                        outHtmNew.write(" td { font-kerning:normal; text-rendering:optimizeLegibility; color:#5b5d5e; font-size: 10pt; line-height: 18px; font-family: \"Arial\"; } ");
+                                        // Modified to avoid page break for long tables on July 04, 2016-------Starts
+                                        outHtmNew.write(" tr { page-break-inside: avoid;} ");
+                                        // Modified to avoid page break for long tables on July 04, 2016-------Ends
+                                        outHtmNew.write("</style>");
+                                        outHtmNew.write("</head>");
+                                        outHtmNew.write("<body>");
+                                        outHtmNew.write(strHtmlNew);
+                                        outHtmNew.flush();
+                                        outHtmNew.close();
+                                        //ftpClientPreInstance.close();
+                                        ftpClientPreInstance.disconnect();
+                                    }
+                                }
+                                String dpiFileNameNew = dpiFileNameBuffer.append(sConnObjName).append("-").append(strReportConfigId).append("-Rev").append(sConnObjRev).append(".xml").toString();
+                                ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpInputFolder, false);
+                                
+                                // Added to fix the extra xml file issue identified during sprint 17 AATL-24218
+                                if ( dpiFileName!= null && !dpiFileName.equals(""))
+                                    dpiFileNameNew = dpiFileName;
+                                //*//
+                                ftpClientPreInstance.create(dpiFileNameNew);
+                                BufferedOutputStream outDPISpecific = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                outDPISpecific.write(createXMLJobTicketString(FTP_REMOTE_INPUT_FOLDER + INPUT_SEPERATOR + strTempFolderName,
+                                                        FTP_REMOTE_OUTPUT_FOLDER + OUTPUT_SEPERATOR + strTempFolderName,
+                                                        slFilesListNew, destFileName, strWaterMarkSettings, dConnObj, context, sParentObjType, sParentObjName, sParentObjRev, sParentObjIAPPClassification).getBytes());
+                                outDPISpecific.flush();
+                                outDPISpecific.close();
+                                ftpClientPreInstance.disconnect();
+                            }
+                            else
+                            {
+                                String dpiFileNameNew = dpiFileNameBuffer.append(sParentObjName).append("-").append(strReportConfigId).append("-Rev").append(sParentObjRev).append(".xml").toString();
+                                try {
+                                    //System.out.println(objectId + " : connecting to tranfer DPI File to FTP");
+                                    ftpClientPreInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpInputFolder, false);
+                                    
+                                    // Added to fix the extra xml file issue identified during sprint 17 AATL-24218
+                                    if ( dpiFileName!= null && !dpiFileName.equals(""))
+                                        dpiFileNameNew = dpiFileName;
+                                    //*//
+                                    
+                                    ftpClientPreInstance.create(dpiFileNameNew);
+                                    BufferedOutputStream outDPISpecific = new BufferedOutputStream(new com.matrixone.apps.domain.util.MyOutputStream(ftpClientPreInstance));
+                                    
+                                    //System.out.println(objectId + " : transfer DPI File");
+                                    
+                                    outDPISpecific.write(createXMLJobTicketString(FTP_REMOTE_INPUT_FOLDER + INPUT_SEPERATOR + strTempFolderName,
+                                                            FTP_REMOTE_OUTPUT_FOLDER + OUTPUT_SEPERATOR + strTempFolderName,
+                                                            slFilesListNew, destFileName, strWaterMarkSettings, dObject, context, sParentObjType, sParentObjName, sParentObjRev, sParentObjIAPPClassification).getBytes());                                         
+                                    outDPISpecific.flush();
+                                    outDPISpecific.close();
+                                    //System.out.println(objectId + " : close DPI after transfer ");
+                                }
+                                finally {
+                                    //System.out.println(objectId + " : disconnect FTP after DPI transfer ");
+                                    ftpClientPreInstance.disconnect();
+                                }
+                            }
+                        }
+
+                        //TRU add end user story id= TRU-18565
+                    
+                    try {
+                          //System.out.println(objectId + " : connecting to check if output  file exists ");
+                      
+                          ftpClientPostInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, false);
+                          for(int i=0;i<SLEEP_COUNTER;i++) {
+                              if(ftpClientPostInstance.exists(destFileName)) {
+                                  renderProcess = true;
+                                  break;
+                              } else if(ftpClientPostInstance.exists(altDestFileName)) {
+                                  renderProcess = true;
+                                  destFileName = altDestFileName;
+                                  break;
+                              }
+                              //TRU update begin user story id= TRU-18565
+                              Thread.sleep(SLEEP_INTERVAL*2500);
+                              //TRU update end user story id= TRU-18565
+                          }
+                    } catch (Exception e){
+				e.printStackTrace();	
+                    } finally {
+                      //System.out.println(objectId + " : disconnect after out put file check ");
+                      ftpClientPostInstance.disconnect();
+                    }
+
+                      if(renderProcess) {
+                          commitTransaction = true;
+                      } else {
+                          iResult = 1;
+                          sendSuccessIconMail = false;
+                          commitTransaction = false;
+                          break;
+                      }
+                  }
+
+                  if(commitTransaction) {
+                      //IF ALL TECHSPEC OBJECTS RENDERED SUCCESSFULLY
+                      iResult = 0;
+                      sendSuccessIconMail = true;
+
+                      busSelect = new StringList();
+                      busSelect.add(DomainConstants.SELECT_NAME);
+                      busSelect.add(DomainConstants.SELECT_REVISION);
+                      //Added by AS-TCS START
+                      busSelect.add(DomainConstants.SELECT_TYPE);
+                      //Added by AS-TCS END
+                          techObjItr = techObjList.iterator();
+                      while(techObjItr.hasNext()) {
+                          Map techObjInfoMap = (Map)techObjItr.next();
+                          objectId = (String)techObjInfoMap.get(DomainConstants.SELECT_ID);
+
+                          if (objectId == null || objectId.equals("")) {
+                              throw (new IllegalArgumentException(StringResource.format(
+                                                      FrameworkStringResource.getString(
+                                     FrameworkStringResource.Generic_NullParameterPassed,
+                                                                    lLocal),
+                                                "className", "emxCPNProductData",
+                                                                 "paramName", "objectId",
+                                                        "methodName", "setIssuedDate")));
+                          }
+
+                          DomainObject specObj = DomainObject.newInstance(context,objectId);
+                          Map specObjMap = specObj.getInfo(context, busSelect);
+
+                          String specName = (String)specObjMap.get(DomainConstants.SELECT_NAME);
+                          String specRev = (String)specObjMap.get(DomainConstants.SELECT_REVISION);
+                          //Modified for TRU-2559 by AS-TCS START
+                          String specType = (String)specObjMap.get(DomainConstants.SELECT_TYPE);
+                          
+                           // Added by TJ on 04/26/2005 to eliminate spaces on the filename.
+                          specName = replaceSpacesTru(specName);
+// wqz : V6R2011x : Added for Configuration Report Functionality : 11-05-2010
+//                          sFileName = specName + strReportName +"-Rev"+specRev+".pdf";
+                          //sFileName = specName + "-" + strReportConfigId +"-Rev"+specRev+".pdf";
+                          StringBuffer sb = new StringBuffer();
+                          StringBuffer sb1 = new StringBuffer();
+                          StringBuffer sb2 = new StringBuffer();
+                          
+                          /* added for TRU-2559 by Spec Team A
+                           * PDF naming convention changed for General View for TRU-22045, July 11, 2016.
+                           */
+                            if(specObj.isKindOf(context,JnJ_trU_SpecGlobalVariables_mxJPO.TYPE_CONSUMER_SPECIFICATION))
+                            {
+                              if(strReportConfigId.equals("1")||strReportName.contains("General"))
+                                {
+                                    sFileName = sb2.append(specType.replace(' ','_')).append("_").append(specName).append("_").append(specRev).append("_").append("General").append(".pdf").toString();
+                                }
+                                else if(strReportConfigId.equals("2")||strReportName.contains("Specific"))
+                                {
+                                    sFileName = sb1.append(specType.replace(' ','_')).append("_").append(specName).append("_").append(specRev).append("_").append("Specific").append(".pdf").toString();
+                                }
+								//Added for User Story AATL-22145 -- START
+								 else if(strReportConfigId.equals("3")||strReportName.contains("FG_PWI"))
+                                {
+                                    sFileName = sb1.append(specType.replace(' ','_')).append("_").append(specName).append("_").append(specRev).append("_").append("FG_PWI_Report").append(".pdf").toString();
+                                }
+								//Added for User Story AATL-22145 -- END
+                            }
+                            else
+                            {
+                                sFileName = sb.append(specName).append("-").append(strReportConfigId).append("-Rev").append(specRev).append(".pdf").toString();
+                            }
+                            // sFileName = specName+"-Rev"+specRev+".pdf";
+                          //Modified for TRU-2559 by AS-TCS END
+                          if(isSupplierPDFMode) {
+                              //sFileName = "SUP-" + specName+"-Rev"+specRev+".pdf";
+                              sFileName = sb1.append("SUP-").append(specName).append("-").append(strReportConfigId).append("-Rev").append(specRev).append(".pdf").toString();
+                          }
+                            
+
+                          //Attach the created file to the techspec object.
+                          BusinessObject obj = new BusinessObject(objectId);
+                          obj.unlock(context);
+
+                          //ftpClient= new mxFtp();
+                          try {
+                              //System.out.println(objectId + " : connect to get the output pdf");
+                              ftpClientPostInstance.connect(FTP_PROTOCOL, FTP_HOST_NAME, null, FTP_USER_NAME, FTP_PASSWORD, ftpOutputFolder, true);
+                              ftpClientPostInstance.open(sFileName);
+                              InputStream in = new com.matrixone.apps.cpn.MyFtpInputStream(ftpClientPostInstance);
+
+                              String workspaceFolder = context.createWorkspace();
+                              String path = workspaceFolder + java.io.File.separator + sFileName;
+                              FileOutputStream out = new FileOutputStream(path);
+                              long cnt = com.matrixone.fcs.common.TransportUtil.transport(in,out, 8*1024);
+                              in.close();
+                              out.close();
+                              //System.out.println(objectId + " : get output pdf");
+                              MQLCommand mql = new MQLCommand();
+                              ContextUtil.pushContext(context);
+							//Modified for AATL-22147 -- START
+                          //if (!mql.executeCommand(context,"checkin bus $1 $2 $3 format $4 append $5",(String)specObjMap.get(SELECT_TYPE),(String)specObjMap.get(SELECT_NAME),(String)specObjMap.get(SELECT_REVISION),RenderingFormat,workspaceFolder + java.io.File.separator + sFileName)) {
+                          if (!mql.executeCommand(context,"checkin bus '$1' '$2' $3 format $4 append $5",(String)specObjMap.get(SELECT_TYPE),(String)specObjMap.get(SELECT_NAME),(String)specObjMap.get(SELECT_REVISION),RenderingFormat,workspaceFolder + java.io.File.separator + sFileName)) {
+						//Modified for AATL-22147 -- END
+                                  throw new Exception(mql.getError());
+                              }
+                          ContextUtil.popContext(context);
+                          //System.out.println(objectId + " : check in output pdf");
+                           //   ftpClient.close();
+                        } finally {
+                          //System.out.println(objectId + " : disconnect ftp");
+                          ftpClientPostInstance.disconnect();
+                        }
+
+                          String supplierPDFTypeKeyValue = "";
+
+                          // UPDATING THE ATTRIBUTES OF TECH SPEC OBJECT
+                          /*HashMap attributeMap = new HashMap();
+                          attributeMap.put(CPNCommonConstants.ATTRIBUTE_RENDERED_FILE_NAME,sFileName);
+                          attributeMap.put(CPNCommonConstants.ATTRIBUTE_RENDER_SUCCESS_FLAG,"Yes");
+                          attributeMap.put(CPNCommonConstants.ATTRIBUTE_RENDER_ERROR_MESSAGE,strSuccessRenderMsg);
+                          specObj.setAttributeValues(context,attributeMap);*/
+/*
+                          if(sendSuccessNotification !=null && sendSuccessNotification.equalsIgnoreCase("true")) {
+                              String[] messageKeys = {"name"};
+                              String[] messageValues = {(String)specObjMap.get(SELECT_NAME)};
+                              MailUtil.sendNotification(context,
+                                                     mailToList,
+                                                           null,
+                                                           null,
+     FrameworkStringResource.TechSpec_Rendition_Success_Subject,
+                                                           null,
+                                                           null,
+     FrameworkStringResource.TechSpec_Rendition_Success_Message,
+                                                    messageKeys,
+                                                  messageValues,
+                                                   objectIdList,
+                                                          null);
+                          }
+*/
+                      }
+                  } else {
+                      sendSuccessIconMail = false;
+                      //COMES HERE WHEN RENDITION PROCESS HAS FAILED.
+                      techObjItr = techObjList.iterator();
+                      while(techObjItr.hasNext()) {
+                          Map techObjInfoMap = (Map)techObjItr.next();
+                          objectId = (String)techObjInfoMap.get(DomainConstants.SELECT_ID);
+                          if (objectId == null || objectId.equals("")) {
+                              throw (new IllegalArgumentException(StringResource.format(
+                                                      FrameworkStringResource.getString(
+                                     FrameworkStringResource.Generic_NullParameterPassed,
+                                                                    lLocal),
+                                                "className", "emxCPNProductData",
+                                                                 "paramName", "objectId",
+                                                        "methodName", "setIssuedDate")));
+                          }
+
+                          /*DomainObject specObj = DomainObject.newInstance(context,objectId);
+
+                          // UPDATING THE TECHSPEC ATTRIBUTES WITH RENDER FAILURE MESSAGE & SUCCESS FLAG AS FALSE
+                          HashMap attributeMap = new HashMap();
+                          attributeMap.put(CPNCommonConstants.ATTRIBUTE_RENDER_SUCCESS_FLAG,"No");
+                          attributeMap.put(CPNCommonConstants.ATTRIBUTE_RENDER_ERROR_MESSAGE,strErrorRenderMsg);
+                          specObj.setAttributeValues(context,attributeMap);*/
+
+                      }
+                  }
+                  if(sendSuccessIconMail) {
+                      //String isFinalCheckOverridden = EnoviaResourceBundle.getProperty(context, "emxCPN.FinalCheck.Override");
+                      String scoState = (String)strObjectInfoMap.get(SELECT_CURRENT);
+
+                  } else {
+                      Iterator techItr = techObjList.iterator();
+                      while(techItr.hasNext()) {
+                          Map techObjMap = (Map)techItr.next();
+                          String specId = (String)techObjMap.get(DomainConstants.SELECT_ID);
+                          emxCPNNotificationUtil_mxJPO notificationUtil = new emxCPNNotificationUtil_mxJPO(context, null);
+                          notificationUtil.objectNotification(context,specId,"CPNProductDataRenditionFailedNotification",null);
+                          notificationUtil.objectNotification(context,specId,"CPNProductDataRenditionFailedEventNotification",null);
+                      }
+                        // 10-17-2005 by tonya: send notification for rendition failure - end
+                  }
+
+                  Iterator techItr = techObjList.iterator();
+                  while(techItr.hasNext()) {
+                      Map techObjMap = (Map)techItr.next();
+                      String specId = (String)techObjMap.get(DomainConstants.SELECT_ID);
+                      DomainObject doPD = DomainObject.newInstance(context,specId);
+                      StringList objectSel = new StringList(DomainConstants.SELECT_ID);
+                      String relPattern = PropertyUtil.getSchemaProperty(context,"relationship_PendingJob");
+                      String typeJob = PropertyUtil.getSchemaProperty(context,"type_Job");
+                      //Map mapRel = doPD.getRelatedObject(context,relPattern, true, objectSel, null);
+                      String strBusWhere = "(current ==\"Running\")";
+                      //Commented as the owner for adlib server pdf will be "User-Agent"
+                      /* if(args.length >= 3 && !"".equals(args[2])) {
+                          strBusWhere += "&& (owner==\"" + args[2] + "\")";
+                      }*/
+                      MapList jobList = doPD.getRelatedObjects(context,
+                              relPattern,
+                              typeJob,
+                              objectSel,
+                              null,
+                              false,
+                              true,
+                              (short)1,
+                              strBusWhere,
+                              null);
+
+                      for(int m=0;m<jobList.size();m++) {
+                          Map mapRel = (Map)jobList.get(m);
+                          String job = (String)mapRel.get(DomainConstants.SELECT_ID);
+                          Job doJobPmt = new Job(job);
+                          //doPD.setId(job);
+                          try {
+                              ContextUtil.pushContext(context);
+                              String attrCompletionStatus = PropertyUtil.getSchemaProperty(context,"attribute_CompletionStatus");
+                              //added for AATL-24223 - start 
+                              if ( commitTransaction )
+                              {
+                                doJobPmt.setAttributeValue(context,attrCompletionStatus,"Succeeded");
+                                doJobPmt.promote(context);
+                              }
+                              else
+                              {
+                                doJobPmt.setAttributeValue(context,attrCompletionStatus,"Failed");
+                              }
+                              //added for AATL-24223 - end 
+                          } finally {
+                              ContextUtil.popContext(context);
+                          }
+                      }
+                  }
+
+              } catch (Exception ex) {
+                  ex.printStackTrace();
+                  throw ex;
+              } finally {
+                  //Commenting for Supplier Access check method issue
+                  //ContextUtil.popContext(context);
+              }
+          }
+          //commented to restrict folder deletion
+          //cleanAdlibFolders(context, ftpOutputFolder, dpiFileName);
+          return iResult;
+         }catch(InterruptedException e)
+         {
+             e.printStackTrace();
+             iResult=1;
+             return iResult;
+          } finally
+         {
+             System.out.printf("The document has been printed\n");
+             ftpClientPreInstance.close();
+             ftpClientPostInstance.close();
+            // semaphore.release();
+            //Added to fix Spec rendering for non-english languages --- Start------- 
+            try{
+                context.setLocale(tmpLocale);
+            }catch(Exception exp){
+                exp.printStackTrace();
+            }
+            //Added to fix Spec rendering for non-english languages --- End------- 
+             
+          }
+      }//End of renderPDF method
+	
