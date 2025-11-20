@@ -1,5 +1,50 @@
-1. Go to Input folder and check the Report file is present
-2. Go to Config set the INPUT.FILE entry 
-3. Check the TYPES entries that all required parent types are present with comma separated
-4. Check the EXCLUDE.TYPE entries that filtered child types are present with comma separated
-5. Go to Script folder and run the shell script which have two TCL , first TCL will generate type base files with required entries in the Output folder, second TCl will pick up one by one Output files and for each entry connect a Legacy Reference Type object with attributes to the parent spec
+Here are your steps rewritten clearly, professionally, and in a well-structured manner:
+
+
+---
+
+IQ Execution Steps
+
+1. Verify Input File
+Navigate to the Input folder and ensure that the required Report file is present.
+
+
+2. Configure Input File Path
+Open the Config file and set the value for INPUT.FILE to point to the correct report file.
+
+
+3. Validate Parent Types
+Check the TYPES entry in the Config.
+
+Confirm that all required parent types are listed.
+
+Make sure they are comma-separated.
+
+
+
+4. Validate Excluded Child Types
+Check the EXCLUDE.TYPE entry.
+
+Ensure all child types that need to be filtered are listed.
+
+These should also be comma-separated.
+
+
+
+5. Run the Script
+Go to the Script folder and execute the shell script.
+
+The script runs two TCL files in sequence:
+
+First TCL: Reads the Report file and generates type-wise output files in the Output folder based on the configured parent types and excluded child types.
+
+Second TCL: Processes each generated output file and connects each entry to the corresponding Legacy Reference Type object, setting the required attributes on the parent specification.
+
+
+
+
+
+
+---
+
+If you'd like, I can also format this as a numbered list for documentation, add headings, or convert it into a PDF-ready version.
