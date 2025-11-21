@@ -1,81 +1,139 @@
-#!/usr/bin/tclsh
 
-# -------------------------------
-# CONFIG SECTION
-# -------------------------------
 
-# Input report file (tab-separated)
-set inputFile "report.xls"
 
-# List of Types to extract
-set typesList {Document Spec Drawing CADModel Part}
+tcl;
 
-# Output directory
-set outDir "Output"
-file mkdir $outDir
+proc readFile {propEntry} {
+    set configPath [file join "/apps/Aniket/UserStory_AATL-30539/ReferenceDocMigration/Config" "LegacyDocConfig.txt"]
 
-# Column order you want in output:
-# Name State Title Type Rev
-# Mapping input col → output col
-# Input index: 0:Type 1:Name 2:Rev 3:Title 4:State
-array set colIndex {
-    Name 1
-    State 4
-    Title 3
-    Type 0
-    Rev 2
-}
+    if {![file exists $configPath]} {
+        error "Config file not found: $configPath"
+    }
 
-# -------------------------------
-# SCRIPT START
-# -------------------------------
+    set fh [open $configPath r]
+    set lines [split [read $fh] "\n"]
+    close $fh
 
-# Read input file
-set fh [open $inputFile r]
+    set valuesList {}
 
-# Skip header
-gets $fh headerLine
-
-# Open a file handle map for each Type
-array set outFH {}
-foreach t $typesList {
-    set outFH($t) [open "$outDir/${t}_output.txt" w]
-}
-
-# Process each line
-while {[gets $fh line] >= 0} {
-
-    # Split by tab
-    set cols [split $line "\t"]
-
-    # Skip if not enough columns
-    if {[llength $cols] < 5} continue
-
-    # Take input Type (col 0)
-    set inType [lindex $cols 0]
-
-    # If Type matches any from the list
-    if {[lsearch -exact $typesList $inType] != -1} {
-
-        # Reorder to desired columns
-        set outputRow ""
-        foreach k {Name State Title Type Rev} {
-            append outputRow [lindex $cols $colIndex($k)] "\t"
+    foreach line $lines {
+        # Skip empty lines or comment lines starting with #
+        if {[string trim $line] eq "" || [string match "#*" $line]} {
+            continue
         }
 
-        # Remove last tab
-        set outputRow [string trimright $outputRow "\t"]
-
-        # Write to that Type's file
-        puts $outFH($inType) $outputRow
+        # Match the desired property and extract values
+        if {[regexp "^$propEntry=(.*)" $line -> values]} {
+            foreach val [split $values ","] {
+                lappend valuesList [string trim $val]
+            }
+            break
+        }
     }
+
+    return $valuesList
 }
 
-close $fh
-
-# Close all output files
-foreach t $typesList {
-    close $outFH($t)
+proc extractReferenceDocs {typeList input_file output_dir success_log error_log} {
+	
+	set in    [open $input_file r]
+    set lines [split [read $in] "\n"]
+    close $in
+	
+	set header [lindex $lines 0]
+	
+	array set typeData {}
+	
+	
+	
+	
+	
+	
 }
 
-puts "Processing complete. Check '$outDir/' folder."
+
+proc setTriggerOff {} {
+	set errorCreate [ catch {mql trigg off} ResultCreate ]
+	puts $ResultCreate
+}
+
+proc setTriggerOn {} {
+	set errorCreate [ catch {mql trigg on} ResultCreate ]
+	puts $ResultCreate
+}
+
+proc setHistoryOff {} {
+	set errorCreate [ catch {mql history off} ResultCreate ]
+	puts $ResultCreate
+}
+
+proc setHistoryOn {} {
+	set errorCreate [ catch {mql history on} ResultCreate ]
+	puts $ResultCreate
+}
+
+eval {
+	set base_dir [pwd]
+	set output_dir  "$base_dir/../Output"
+    set input_dir "$base_dir/../Input/Spec_TM_Report.xls"
+	
+	
+	set timeStr [clock format [clock seconds] -format "%Y%m%d_%H%M%S"]
+	
+	if {![file exists $input_dir]} {
+		puts "Input directory missing"
+		exit 1
+	}
+	
+	
+	
+	if {![file exists $output_dir]} {
+        file mkdir $output_dir
+    }
+	
+	set archive_dir "$output_dir/Archive/"
+	if {![file exists $archive_dir]} {
+		file mkdir $archive_dir
+	}
+	
+	set oldOutput_dir "$archive_dir/$timeStr/"
+	if {![file exists $oldOutput_dir]} {
+		file mkdir $oldOutput_dir
+	}
+	
+	foreach old_output [glob -nocomplain -directory $output_dir *.txt] {
+		file rename -force $old_output "$oldOutput_dir/"
+	}
+	
+	set success_log [open "$output_dir/extraction_success_log.txt" w]
+	set error_log   [open "$output_dir/extraction_error_log.txt" w]
+	
+	set startTime "========= Extraction started at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
+	puts $startTime
+	puts $success_log "$startTime"
+	
+	set typeList [readFile "TYPES"]
+    if {[llength $typeList] == 0} {
+        puts "Error: TYPES not defined in LegacyDocConfig.txt"
+        exit 1
+    }
+	
+	puts $typeList
+	
+	extractReferenceDocs $typeList $input_dir $output_dir $success_log $error_log
+	
+	set triggOff [setTriggerOff]
+	set historyOff [setHistoryOff]
+	
+	close $error_log
+
+	set triggOn [setTriggerOn]
+	set historyOn [setHistoryOn]
+
+	set endTime "========= Extraction completed at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
+	puts $endTime
+	puts $success_log "$endTime"
+	close $success_log
+	
+	
+}
