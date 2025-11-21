@@ -1,139 +1,81 @@
+proc extractReferenceDocs {typeList input_file output_dir success_log error_log} {
 
-
-
-tcl;
-
-proc readFile {propEntry} {
-    set configPath [file join "/apps/Aniket/UserStory_AATL-30539/ReferenceDocMigration/Config" "LegacyDocConfig.txt"]
-
-    if {![file exists $configPath]} {
-        error "Config file not found: $configPath"
-    }
-
-    set fh [open $configPath r]
+    # Read the report file (tab separated)
+    set fh [open $input_file r]
     set lines [split [read $fh] "\n"]
     close $fh
 
-    set valuesList {}
+    # Extract header and skip it
+    set header [lindex $lines 0]
 
-    foreach line $lines {
-        # Skip empty lines or comment lines starting with #
-        if {[string trim $line] eq "" || [string match "#*" $line]} {
+    # Create one output file per type
+    array set typeFH {}
+    foreach t $typeList {
+        set outFile "$output_dir/${t}_output.txt"
+        set typeFH($t) [open $outFile w]
+
+        # Write header row in output
+        puts $typeFH($t) "Name\tState\tTitle\tOwner\tType\tRev"
+    }
+
+    # Process each row after header
+    foreach line [lrange $lines 1 end] {
+
+        # Skip empty lines
+        if {[string trim $line] eq ""} {
             continue
         }
 
-        # Match the desired property and extract values
-        if {[regexp "^$propEntry=(.*)" $line -> values]} {
-            foreach val [split $values ","] {
-                lappend valuesList [string trim $val]
-            }
-            break
+        # Split by TAB
+        set cols [split $line "\t"]
+
+        # Must have at least 5 columns: Type Name Rev Title State
+        if {[llength $cols] < 5} {
+            puts $error_log "Skipping invalid line: $line"
+            continue
         }
+
+        # Extract fields
+        set inType [lindex $cols 0]
+        set inName [lindex $cols 1]
+        set inRev  [lindex $cols 2]
+        set inTitle [lindex $cols 3]
+        set inState [lindex $cols 4]
+
+        # Match only if Type is in typeList
+        if {[lsearch -exact $typeList $inType] == -1} {
+            continue
+        }
+
+        # ------------------------------------------------
+        #   FETCH OWNER USING MQL
+        # ------------------------------------------------
+        set owner ""
+        set mqlCmd "print bus \"$inType\" \"$inName\" \"$inRev\" select owner dump"
+
+        set err [catch {mql $mqlCmd} ownerValue]
+
+        if {$err} {
+            puts $error_log "MQL ERROR for $inType $inName $inRev → $ownerValue"
+            set owner "N/A"
+        } else {
+            set owner [string trim $ownerValue]
+        }
+
+        # ------------------------------------------------
+        #  FORMAT OUTPUT ROW (Reordered)
+        # ------------------------------------------------
+        # Name | State | Title | Owner | Type | Rev
+        set outRow "$inName\t$inState\t$inTitle\t$owner\t$inType\t$inRev"
+
+        # Write into correct file
+        puts $typeFH($inType) $outRow
+        puts $success_log "Extracted: $inType $inName $inRev"
     }
 
-    return $valuesList
-}
-
-proc extractReferenceDocs {typeList input_file output_dir success_log error_log} {
-	
-	set in    [open $input_file r]
-    set lines [split [read $in] "\n"]
-    close $in
-	
-	set header [lindex $lines 0]
-	
-	array set typeData {}
-	
-	
-	
-	
-	
-	
-}
-
-
-proc setTriggerOff {} {
-	set errorCreate [ catch {mql trigg off} ResultCreate ]
-	puts $ResultCreate
-}
-
-proc setTriggerOn {} {
-	set errorCreate [ catch {mql trigg on} ResultCreate ]
-	puts $ResultCreate
-}
-
-proc setHistoryOff {} {
-	set errorCreate [ catch {mql history off} ResultCreate ]
-	puts $ResultCreate
-}
-
-proc setHistoryOn {} {
-	set errorCreate [ catch {mql history on} ResultCreate ]
-	puts $ResultCreate
-}
-
-eval {
-	set base_dir [pwd]
-	set output_dir  "$base_dir/../Output"
-    set input_dir "$base_dir/../Input/Spec_TM_Report.xls"
-	
-	
-	set timeStr [clock format [clock seconds] -format "%Y%m%d_%H%M%S"]
-	
-	if {![file exists $input_dir]} {
-		puts "Input directory missing"
-		exit 1
-	}
-	
-	
-	
-	if {![file exists $output_dir]} {
-        file mkdir $output_dir
+    # Close all opened files
+    foreach t $typeList {
+        close $typeFH($t)
     }
-	
-	set archive_dir "$output_dir/Archive/"
-	if {![file exists $archive_dir]} {
-		file mkdir $archive_dir
-	}
-	
-	set oldOutput_dir "$archive_dir/$timeStr/"
-	if {![file exists $oldOutput_dir]} {
-		file mkdir $oldOutput_dir
-	}
-	
-	foreach old_output [glob -nocomplain -directory $output_dir *.txt] {
-		file rename -force $old_output "$oldOutput_dir/"
-	}
-	
-	set success_log [open "$output_dir/extraction_success_log.txt" w]
-	set error_log   [open "$output_dir/extraction_error_log.txt" w]
-	
-	set startTime "========= Extraction started at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
-	puts $startTime
-	puts $success_log "$startTime"
-	
-	set typeList [readFile "TYPES"]
-    if {[llength $typeList] == 0} {
-        puts "Error: TYPES not defined in LegacyDocConfig.txt"
-        exit 1
-    }
-	
-	puts $typeList
-	
-	extractReferenceDocs $typeList $input_dir $output_dir $success_log $error_log
-	
-	set triggOff [setTriggerOff]
-	set historyOff [setHistoryOff]
-	
-	close $error_log
 
-	set triggOn [setTriggerOn]
-	set historyOn [setHistoryOn]
-
-	set endTime "========= Extraction completed at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
-	puts $endTime
-	puts $success_log "$endTime"
-	close $success_log
-	
-	
 }
