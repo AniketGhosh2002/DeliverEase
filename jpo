@@ -1,81 +1,231 @@
-proc extractReferenceDocs {typeList input_file output_dir success_log error_log} {
+#!/usr/bin/tclsh
+# ====================================================================
+#  Script Name : ReferenceDocAutomation.tcl
+#  Description : Automates creation of "Legacy Document" objects in ENOVIA
+#                from input reference files, modifies attributes, and connects
+#                them to parent objects using configured relationships.
+#  Author      : Aniket Ghosh
+#  Notes       : Reads configuration from LegacyDocConfig.txt
+#                and processes files from the ../Output directory.
+# ====================================================================
 
-    # Read the report file (tab separated)
-    set fh [open $input_file r]
+tcl;
+
+# ------------------------------------------------------------------------------
+# readFile
+#   Reads a specific property entry from the config file (key=value)
+#   and returns its comma-separated values as a list.
+# ------------------------------------------------------------------------------
+proc readFile {propEntry} {
+	set base_dir [pwd]
+    set configPath [file join "$base_dir/../Config" "LegacyDocConfig.txt"]
+
+    if {![file exists $configPath]} {
+        puts "Config file not found: $configPath"
+    }
+
+    set fh [open $configPath r]
     set lines [split [read $fh] "\n"]
     close $fh
 
-    # Extract header and skip it
-    set header [lindex $lines 0]
+    set valuesList {}
 
-    # Create one output file per type
-    array set typeFH {}
-    foreach t $typeList {
-        set outFile "$output_dir/${t}_output.txt"
-        set typeFH($t) [open $outFile w]
+    foreach line $lines {
+        if {[string trim $line] eq "" || [string match "#*" $line]} {
+            continue
+        }
 
-        # Write header row in output
-        puts $typeFH($t) "Name\tState\tTitle\tOwner\tType\tRev"
+        if {[regexp "^$propEntry=(.*)" $line -> values]} {
+            foreach val [split $values ","] {
+                lappend valuesList [string trim $val]
+            }
+            break
+        }
     }
 
-    # Process each row after header
-    foreach line [lrange $lines 1 end] {
+    return $valuesList
+}
 
-        # Skip empty lines
+proc addHistory { objectId historyLine } {
+	set hist_cmd "mql mod bus $objectId add history 'data correction' comment '$historyLine'"
+	set hist_out [catch {eval $hist_cmd} hist_result]
+}
+
+proc startTransaction {} {
+	set errorCreate [ catch {mql start transaction historyoff triggeroff} ResultCreate ]
+	if {$errorCreate != 0} {
+		puts "Error starting transaction: $ResultCreate"
+	}
+}
+
+proc commitTransaction {} {
+	set errorCreate [ catch {mql commit transaction} ResultCreate ]
+	if {$errorCreate == 0} {
+		return 0
+	} else {
+		return $ResultCreate
+	}
+}
+
+proc abortTransaction {} {
+	set errorCreate [ catch {mql abort transaction} ResultCreate ]
+	if {$errorCreate != 0} {
+		puts "Error aborting transaction: $ResultCreate"
+	}
+}
+
+proc processFile {filePath log_dir success_log error_log} {
+
+    set in [open $filePath r]
+    set lines [split [read $in] "\n"]
+    close $in
+	
+	set logFileName [lindex [readFile "LOG.FILE"] 0]
+	
+	set output_log  [open "$log_dir/$logFileName" w]
+	set historyLine [lindex [readFile "HISTORY.LINE"] 0]
+	puts $historyLine
+	set parentRel   [lindex [readFile "PARENT.RELATIONSHIP"] 0]
+	set obj_rel     [lindex [readFile "OBJECT.RELATIONSHIP"] 0]
+	puts $output_log "Parent Type~Parent Name~Parent Revision~Child Document Type~Child Document Name~Child Document Revision~Object Type~Object Name~Object Revision~Comments"
+	puts $error_log "Parent Type~Parent name~Parent Revision~Child Document Type~Child Document Name~Child Document Revision~Object Type~Object Name~Object Revision~Comments"
+	set success 0
+			
+	foreach line $lines {
         if {[string trim $line] eq ""} {
             continue
         }
 
-        # Split by TAB
-        set cols [split $line "\t"]
-
-        # Must have at least 5 columns: Type Name Rev Title State
-        if {[llength $cols] < 5} {
+        set parts [split $line "~"]
+        if {[llength $parts] < 7} {
             puts $error_log "Skipping invalid line: $line"
             continue
         }
+		
+		set startTrans [startTransaction]
 
-        # Extract fields
-        set inType [lindex $cols 0]
-        set inName [lindex $cols 1]
-        set inRev  [lindex $cols 2]
-        set inTitle [lindex $cols 3]
-        set inState [lindex $cols 4]
+		set parent_type [lindex $parts 0]
+		set parent_name [lindex $parts 1]
+		set parent_rev  [lindex $parts 2]
+        set parent_id   [lindex $parts 3]
+		set ref_type    [lindex $parts 4]
+        set ref_name    [lindex $parts 5]
+		set ref_rev     [lindex $parts 6]
+        set ref_title   [lindex $parts 7]
 
-        # Match only if Type is in typeList
-        if {[lsearch -exact $typeList $inType] == -1} {
+		set obj_type    [lindex [readFile "OBJECT.TYPE"] 0]
+		set obj_name    "auto_[clock milliseconds]"
+		set obj_rev     [lindex [readFile "OBJECT.REVISION"] 0]
+		set obj_pol     [lindex [readFile "OBJECT.POLICY"] 0]
+		set obj_vault   [lindex [readFile "OBJECT.VAULT"] 0]
+		set obj_proj    [lindex [readFile "OBJECT.PROJECT"] 0]
+		set obj_org     [lindex [readFile "OBJECT.ORGANIZATION"] 0]
+		
+        set add_cmd "mql add bus \"$obj_type\" $obj_name $obj_rev policy \"$obj_pol\" vault \"$obj_vault\" project \"$obj_proj\" organization \"$obj_org\""
+		set add_out [catch {eval $add_cmd} result]
+
+		set print_cmd "mql print bus \"$obj_type\" $obj_name $obj_rev select id dump"
+		set print_out [catch {eval $print_cmd} result]	
+        set obj_id [string trim $result]
+        if {$obj_id eq ""} {
+			puts $output_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_revref_rev~$obj_type~$obj_name~$obj_rev~Failed"
+            puts $error_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Failed to fetch ID for $obj_name"
+            set abortTrans [abortTransaction]
+            continue
+        }
+		
+		set mod_cmd "mql modify bus $obj_id \"Legacy Doc Type\" \"$ref_type\" \"Legacy Doc Name\" \"$ref_name\" \"Legacy Doc Title\" \"$ref_title\" "
+        set mod_out [catch {eval $mod_cmd} mod_result]
+        if {$mod_out != 0} {
+			puts $output_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Failed"
+            puts $error_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Update failed for $obj_id : $mod_result"
+            set abortTrans [abortTransaction]
             continue
         }
 
-        # ------------------------------------------------
-        #   FETCH OWNER USING MQL
-        # ------------------------------------------------
-        set owner ""
-        set mqlCmd "print bus \"$inType\" \"$inName\" \"$inRev\" select owner dump"
-
-        set err [catch {mql $mqlCmd} ownerValue]
-
-        if {$err} {
-            puts $error_log "MQL ERROR for $inType $inName $inRev → $ownerValue"
-            set owner "N/A"
-        } else {
-            set owner [string trim $ownerValue]
+        set conn_cmd "mql connect bus $parent_id relationship \"$obj_rel\" to $obj_id"
+        set conn_out [catch {eval $conn_cmd} conn_result]
+        if {$conn_out != 0} {
+			puts $output_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Failed"
+            puts $error_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Connection failed for $parent_id to $obj_id : $conn_result"
+            set abortTrans [abortTransaction]
+            continue
         }
+		
+		set commitTrans [commitTransaction]
+		
+		addHistory $parent_id $historyLine
+		
+		puts $output_log "$parent_type~$parent_name~$parent_rev~$ref_type~$ref_name~$ref_rev~$obj_type~$obj_name~$obj_rev~Success"
+		incr success
+	}
+	
+	puts $success_log "Objects connected with $obj_rel relationship: $success"
+	close $output_log
+}
 
-        # ------------------------------------------------
-        #  FORMAT OUTPUT ROW (Reordered)
-        # ------------------------------------------------
-        # Name | State | Title | Owner | Type | Rev
-        set outRow "$inName\t$inState\t$inTitle\t$owner\t$inType\t$inRev"
 
-        # Write into correct file
-        puts $typeFH($inType) $outRow
-        puts $success_log "Extracted: $inType $inName $inRev"
-    }
+proc setTriggerOff {} {
+	set errorCreate [ catch {mql trigg off} ResultCreate ]
+	puts $ResultCreate
+}
 
-    # Close all opened files
-    foreach t $typeList {
-        close $typeFH($t)
-    }
+proc setTriggerOn {} {
+	set errorCreate [ catch {mql trigg on} ResultCreate ]
+	puts $ResultCreate
+}
 
+proc setHistoryOff {} {
+	set errorCreate [ catch {mql history off} ResultCreate ]
+	puts $ResultCreate
+}
+
+proc setHistoryOn {} {
+	set errorCreate [ catch {mql history on} ResultCreate ]
+	puts $ResultCreate
+}
+
+eval {
+
+	set base_dir [pwd]
+	set output_dir "$base_dir/../Output"
+	
+	set timeStr [clock format [clock seconds] -format "%Y%m%d_%H%M%S"]
+
+	if {![file exists $output_dir]} {
+		puts "Output directory missing"
+		exit 1
+	}
+
+	set log_dir "$base_dir/../Logs"
+	if {![file exists $log_dir]} {
+		file mkdir $log_dir
+	}
+	
+	set outputFileName  [lindex [readFile "OUTPUT.FILE"] 0]
+	set output_file "$output_dir/$outputFileName"
+	
+	set success_log [open "$log_dir/migration_success_log.txt" w]
+
+	set error_log [open "$log_dir/migration_error_log.txt" w]
+
+	set startTime "=== Migration started at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ==="
+	puts $startTime
+	puts $success_log $startTime
+
+	set triggOff [setTriggerOff]
+
+
+
+	processFile $output_file $log_dir $success_log $error_log
+	
+
+
+	close $error_log
+
+
+	set endTime "=== Migration completed at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ==="
+	puts $endTime
+	puts $success_log $endTime
+	close $success_log
 }
