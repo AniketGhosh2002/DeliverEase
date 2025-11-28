@@ -1,71 +1,99 @@
-#!/usr/bin/tclsh
+import com.matrixone.apps.domain.util.ContextUtil;
+import com.matrixone.apps.domain.util.MqlUtil;
 
-# ---------------------------------------------------
-# Configuration
-# ---------------------------------------------------
+import matrix.db.Context;
+import matrix.db.JPO;
 
-set reportFile "report.xls"   ;# Input report file
-set allowedTypes {A C}        ;# Only these types will get an output file
+public class jnjTRUDocumentExpiry
+{
+	private static String PASSPORTURL = "";
+	private static String SERVICEURL  = "";
+	private static String USER        = "";
+	private static String PASSWORD    = "";
+	private static String ROLE        = "";
+	private static String PATH        = "";
+	
+	private static Context context    = null;
 
-# ---------------------------------------------------
-# Read report file
-# ---------------------------------------------------
+	public static void main(String [] args)
+	{
+		try
+		{
+			if(args != null && args.length > 5)
+			{
+				PASSPORTURL = args[0];
+				SERVICEURL  = args[1];
+				USER        = args[2];
+				PASSWORD    = args[3];
+				ROLE        = args[4];
+				PATH        = args[5];
+				
+				System.setProperty("bypass.cert", "true");
+				context = getEnoviaConnection();
+				
+				if(context == null)
+				{
+					return;
+				}
+				
+				try
+				{
+					String [] paramArgs = new String[1];
+					paramArgs[0] = PATH;
+					JPO.invoke(context, "ENODCLEffectivityTrigger", null, "autoPromoteDocumentToObsoleteOrInactive", paramArgs, Object.class);
+				}
+				catch(Exception exp)
+				{
+					exp.printStackTrace();
+					System.out.println("The Above Transaction Has Been Rolled back");
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			
+			try
+			{
+				context.close();
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				context.close();
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
+			}
+		}
+	}
 
-if {![file exists $reportFile]} {
-    puts "ERROR: Report file '$reportFile' not found."
-    exit 1
+	private static Context getEnoviaConnection()
+	{
+		try
+		{
+			if(context != null && context.isConnected())
+			{
+				return context;
+			}
+			
+			context = Util.connect( SERVICEURL, PASSPORTURL, USER, PASSWORD, ROLE, "", true);
+		}
+		catch(Exception e)
+		{
+			System.out.println("Exception in Setting ENOVIA Context");
+			e.printStackTrace();
+		}
+		finally
+		{
+			return context;
+		}
+	}
 }
-
-set fp [open $reportFile r]
-set lines [split [read $fp] "\n"]
-close $fp
-
-# Get header (first line)
-set header [lindex $lines 0]
-
-# Create a dict to hold type-wise rows
-array set typeData {}
-
-# ---------------------------------------------------
-# Process each line after header
-# ---------------------------------------------------
-foreach line [lrange $lines 1 end] {
-
-    if {[string trim $line] eq ""} {
-        continue
-    }
-
-    # Split by whitespace or tab – adjust if needed
-    set cols [regexp -inline -all {\S+} $line]
-
-    set type [lindex $cols 0]
-
-    # If type is allowed, store it
-    if {[lsearch -exact $allowedTypes $type] != -1} {
-        lappend typeData($type) $line
-    }
-}
-
-# ---------------------------------------------------
-# Write output file per allowed type
-# ---------------------------------------------------
-foreach type $allowedTypes {
-
-    if {![info exists typeData($type)]} {
-        puts "Skipping $type – NO entries found in report."
-        continue
-    }
-
-    set outFile "${type}_output.txt"
-    set outFp [open $outFile w]
-
-    puts $outFp $header
-    foreach row $typeData($type) {
-        puts $outFp $row
-    }
-
-    close $outFp
-    puts "Created: $outFile"
-}
-
-puts "\nDone!"
