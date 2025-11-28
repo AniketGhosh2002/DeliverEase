@@ -1,64 +1,144 @@
-<%@ page import="matrix.db.*" %>
-<%@ page import="matrix.util.*" %>
-<%@ page import="com.matrixone.apps.domain.util.*" %>
-
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
 <html>
+<head>
+    <title>ENOVIA Report UI</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f6fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 95%;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+
+        .btn-auth {
+            background: #2e86de;
+            color: white;
+        }
+        .btn-auth:hover {
+            background: #1d5fa8;
+        }
+
+        .btn-fetch {
+            background: #10ac84;
+            color: white;
+            margin-top: 25px;
+        }
+        .btn-fetch:hover {
+            background: #0b7e63;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #2e86de;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .empty-row {
+            text-align: center;
+            color: #555;
+            padding: 20px;
+        }
+    </style>
+</head>
+
 <body>
 
-<h2>Standalone JSP with ENOVIA Login</h2>
+<div class="container">
 
-<%
-    String PASSPORTURL = "https://your-passport-url";
-    String SERVICEURL  = "http://your-enovia-server:port/enovia";
-    String USER        = "creator";
-    String PASSWORD    = "password";
-    String ROLE        = "User";
+    <div class="title">Document Render Report</div>
 
-    Context context = null;
+    <!-- Dummy Authenticate Button -->
+    <button class="btn btn-auth">Authenticate</button>
 
-    try {
-        System.setProperty("bypass.cert", "true");
+    <!-- Data Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Spec</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Revision</th>
+                <th>Title</th>
+                <th># Rendered PDF</th>
+            </tr>
+        </thead>
 
-        context = Util.connect(
-                    SERVICEURL,
-                    PASSPORTURL,
-                    USER,
-                    PASSWORD,
-                    ROLE,
-                    "",
-                    true
-                 );
+        <tbody>
+            <!-- Dummy Static Row -->
+            <tr>
+                <td>TESTSPEC</td>
+                <td>Document</td>
+                <td>DOC-00001</td>
+                <td>A</td>
+                <td>Sample Test Document</td>
+                <td>5</td>
+            </tr>
 
-        if (context == null || !context.isConnected()) {
-            out.println("<p style='color:red;'>❌ ENOVIA Login Failed</p>");
-        } else {
-            out.println("<p style='color:green;'>✔ ENOVIA Login Successful</p>");
+            <tr>
+                <td>SPEC2</td>
+                <td>Drawing</td>
+                <td>DWG-0023</td>
+                <td>B</td>
+                <td>Mechanical Housing Design</td>
+                <td>3</td>
+            </tr>
 
-            String fullName = MqlUtil.mqlCommand(
-                context,
-                "print person $1 select fullname dump",
-                USER
-            );
+            <tr>
+                <td colspan="6" class="empty-row">More data will appear here...</td>
+            </tr>
+        </tbody>
+    </table>
 
-            out.println("<p>Full Name: <b>" + fullName + "</b></p>");
-        }
+    <!-- Dummy Fetch Latest Report Button -->
+    <button class="btn btn-fetch">Fetch Latest Report</button>
 
-    } catch (Exception e) {
-        out.println("<pre style='color:red;'>");
-        e.printStackTrace(new java.io.PrintWriter(out));
-        out.println("</pre>");
-    } finally {
-        try {
-            if (context != null && context.isConnected()) {
-                context.close();
-            }
-        } catch (Exception ex) {
-            out.println("<pre>");
-            ex.printStackTrace(new java.io.PrintWriter(out));
-            out.println("</pre>");
-        }
-    }
-%>
+</div>
 
 </body>
 </html>
