@@ -1,99 +1,72 @@
-import com.matrixone.apps.domain.util.ContextUtil;
-import com.matrixone.apps.domain.util.MqlUtil;
+<%@ page import="matrix.db.Context" %>
+<%@ page import="com.matrixone.apps.domain.util.*" %>
+<%@ page import="matrix.util.*" %>
 
-import matrix.db.Context;
-import matrix.db.JPO;
+<html>
+<body>
 
-public class jnjTRUDocumentExpiry
-{
-	private static String PASSPORTURL = "";
-	private static String SERVICEURL  = "";
-	private static String USER        = "";
-	private static String PASSWORD    = "";
-	private static String ROLE        = "";
-	private static String PATH        = "";
-	
-	private static Context context    = null;
+<h2>Standalone JSP with ENOVIA Login</h2>
 
-	public static void main(String [] args)
-	{
-		try
-		{
-			if(args != null && args.length > 5)
-			{
-				PASSPORTURL = args[0];
-				SERVICEURL  = args[1];
-				USER        = args[2];
-				PASSWORD    = args[3];
-				ROLE        = args[4];
-				PATH        = args[5];
-				
-				System.setProperty("bypass.cert", "true");
-				context = getEnoviaConnection();
-				
-				if(context == null)
-				{
-					return;
-				}
-				
-				try
-				{
-					String [] paramArgs = new String[1];
-					paramArgs[0] = PATH;
-					JPO.invoke(context, "ENODCLEffectivityTrigger", null, "autoPromoteDocumentToObsoleteOrInactive", paramArgs, Object.class);
-				}
-				catch(Exception exp)
-				{
-					exp.printStackTrace();
-					System.out.println("The Above Transaction Has Been Rolled back");
-				}
-			}
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-			
-			try
-			{
-				context.close();
-			}
-			catch(Exception ex)
-			{
-				ex.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				context.close();
-			}
-			catch(Exception ex)
-			{
-				ex.printStackTrace();
-			}
-		}
-	}
+<%
+    // -------------------------------
+    // Credentials (fill with your data)
+    // -------------------------------
+    String PASSPORTURL = "https://your-passport-url";
+    String SERVICEURL  = "http://your-enovia-server:port/enovia";
+    String USER        = "creator";
+    String PASSWORD    = "password";
+    String ROLE        = "User";
 
-	private static Context getEnoviaConnection()
-	{
-		try
-		{
-			if(context != null && context.isConnected())
-			{
-				return context;
-			}
-			
-			context = Util.connect( SERVICEURL, PASSPORTURL, USER, PASSWORD, ROLE, "", true);
-		}
-		catch(Exception e)
-		{
-			System.out.println("Exception in Setting ENOVIA Context");
-			e.printStackTrace();
-		}
-		finally
-		{
-			return context;
-		}
-	}
-}
+    // -------------------------------
+    // ENOVIA login using your method
+    // -------------------------------
+    Context context = null;
+
+    try {
+        System.setProperty("bypass.cert", "true");
+
+        // EXACTLY the same as your Util.connect() usage
+        context = Util.connect(
+                    SERVICEURL,
+                    PASSPORTURL,
+                    USER,
+                    PASSWORD,
+                    ROLE,
+                    "",
+                    true
+                 );
+
+        if (context == null || !context.isConnected()) {
+            out.println("<p style='color:red;'>❌ ENOVIA Login Failed</p>");
+        } else {
+            out.println("<p style='color:green;'>✔ ENOVIA Login Successful</p>");
+
+            // ------------------------------
+            // Put your custom logic here
+            // Example: print logged-in user
+            // ------------------------------
+            out.println("<p>Logged in as: <b>" + context.getUser() + "</b></p>");
+            out.println("<p>Role: <b>" + ROLE + "</b></p>");
+            out.println("<p>Service URL: <b>" + SERVICEURL + "</b></p>");
+
+            // You can also do small MQL if needed:
+            String name = MqlUtil.mqlCommand(context, "print person $1 select name dump", USER);
+            out.println("<p>Full Name from ENOVIA: <b>" + name + "</b></p>");
+        }
+
+    } catch (Exception e) {
+        out.println("<p style='color:red;'>Exception occurred</p>");
+        e.printStackTrace(out);
+    } finally {
+        try {
+            if (context != null && context.isConnected()) {
+                context.close();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace(out);
+        }
+    }
+%>
+
+</body>
+</html>
