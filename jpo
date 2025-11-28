@@ -1,134 +1,99 @@
+import com.matrixone.apps.domain.util.ContextUtil;
+import com.matrixone.apps.domain.util.MqlUtil;
 
+import matrix.db.Context;
+import matrix.db.JPO;
 
-
-tcl;
-
-proc readFile {propEntry} {
-	set base_dir [pwd]
-    set configPath [file join "$base_dir/../Config" "LegacyDocConfig.txt"]
-
-    if {![file exists $configPath]} {
-        puts "Config file not found: $configPath"
-    }
-
-    set fh [open $configPath r]
-    set lines [split [read $fh] "\n"]
-    close $fh
-
-    set valuesList {}
-
-    foreach line $lines {
-        if {[string trim $line] eq "" || [string match "#*" $line]} {
-            continue
-        }
-
-        if {[regexp "^$propEntry=(.*)" $line -> values]} {
-            foreach val [split $values ","] {
-                lappend valuesList [string trim $val]
-            }
-            break
-        }
-    }
-
-    return $valuesList
-}
-
-proc extractReferenceDocs {input_file output_dir success_log error_log} {
-
-    set fh [open $input_file r]
-    set lines [split [read $fh] "\n"]
-    close $fh
+public class jnjTRUDocumentExpiry
+{
+	private static String PASSPORTURL = "";
+	private static String SERVICEURL  = "";
+	private static String USER        = "";
+	private static String PASSWORD    = "";
+	private static String ROLE        = "";
+	private static String PATH        = "";
 	
-	set filterList       [readFile "EXCLUDE.TYPE"]
-	set outputFileName [lindex [readFile "OUTPUT.FILE"] 0]
-    set outFile [open "$output_dir/$outputFileName" w]
+	private static Context context    = null;
 
-		set success 0
-	
-    foreach line [lrange $lines 1 end] {
-	
-        if {[string trim $line] eq ""} {
-            continue
-        }
-
-        set cols [split $line "\t"]
-
-        if {[llength $cols] < 12} {
-            puts $error_log "Skipping invalid line: $line"
-            continue
-        }
-
-        set parentType [lindex $cols 1]
-        set parentName [lindex $cols 2]
-        set parentRev  [lindex $cols 3]
-        set parentId   [lindex $cols 5]
-        set childType  [lindex $cols 7]
-		set childName  [lindex $cols 8]
-		set childRev   [lindex $cols 9]
-		set childId    [lindex $cols 11]
-
-		if {[lsearch -exact $filterList $childType] == -1} {
-		
-			if {[catch {mql print bus $childId select attribute\[Title\] dump ~;} childTitle]} {
-					puts $error_log "Error in child document title for $childId"
-					#continue
+	public static void main(String [] args)
+	{
+		try
+		{
+			if(args != null && args.length > 5)
+			{
+				PASSPORTURL = args[0];
+				SERVICEURL  = args[1];
+				USER        = args[2];
+				PASSWORD    = args[3];
+				ROLE        = args[4];
+				PATH        = args[5];
+				
+				System.setProperty("bypass.cert", "true");
+				context = getEnoviaConnection();
+				
+				if(context == null)
+				{
+					return;
+				}
+				
+				try
+				{
+					String [] paramArgs = new String[1];
+					paramArgs[0] = PATH;
+					JPO.invoke(context, "ENODCLEffectivityTrigger", null, "autoPromoteDocumentToObsoleteOrInactive", paramArgs, Object.class);
+				}
+				catch(Exception exp)
+				{
+					exp.printStackTrace();
+					System.out.println("The Above Transaction Has Been Rolled back");
+				}
 			}
-		
-			#set safeRefTitle [encoding convertto utf-8 $childTitle]
-
-			set outRow "$parentType~$parentName~$parentRev~$parentId~$childType~$childName~$childRev~$childId"
-
-			puts $outFile $outRow
-			incr success
 		}
-		
-    }
-	puts $success_log "Successfully fetched objects : $success"
-
-    close $outFile
-
-}
-
-
-
-
-eval {
-	set base_dir [pwd]
-	set output_dir  "$base_dir/../Output"
-    set input_dir "$base_dir/../Input"
-
-	set timeStr [clock format [clock seconds] -format "%Y%m%d_%H%M%S"]
-	
-	if {![file exists $input_dir]} {
-		puts "Input directory missing"
-		exit 1
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			
+			try
+			{
+				context.close();
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				context.close();
+			}
+			catch(Exception ex)
+			{
+				ex.printStackTrace();
+			}
+		}
 	}
-	
-	if {![file exists $output_dir]} {
-        file mkdir $output_dir
-    }
-	
-	
-	set inputFileName  [lindex [readFile "INPUT.FILE"] 0]
-	
-	set input_file "$input_dir/$inputFileName"
-	
-	set success_log [open "$output_dir/extraction_success_log.txt" w]
-	set error_log   [open "$output_dir/extraction_error_log.txt" w]
-	
-	set startTime "========= Extraction started at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
-	puts $startTime
-	puts $success_log "$startTime"
-	
-	
-	extractReferenceDocs $input_file $output_dir $success_log $error_log
-	
 
-	set endTime "========= Extraction completed at [clock format [clock seconds] -format {%b %d, %Y %I:%M:%S %p}] ========="
-	puts $endTime
-	puts $success_log "$endTime"
-	close $success_log
-	close $error_log
-	
-	
+	private static Context getEnoviaConnection()
+	{
+		try
+		{
+			if(context != null && context.isConnected())
+			{
+				return context;
+			}
+			
+			context = Util.connect( SERVICEURL, PASSPORTURL, USER, PASSWORD, ROLE, "", true);
+		}
+		catch(Exception e)
+		{
+			System.out.println("Exception in Setting ENOVIA Context");
+			e.printStackTrace();
+		}
+		finally
+		{
+			return context;
+		}
+	}
 }
